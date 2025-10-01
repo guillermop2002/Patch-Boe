@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
     
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     
     if (search) {
       query += ` AND titulo LIKE ?`;

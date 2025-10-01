@@ -21,7 +21,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchPatches();
-  }, []);
+  }, [limit, searchTerm, selectedType]);
 
   const fetchPatches = async () => {
     try {
