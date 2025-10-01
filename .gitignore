@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Datos del proyecto (no subir a GitHub)
+/data/
+/dist/
