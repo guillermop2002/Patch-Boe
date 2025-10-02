@@ -18,9 +18,9 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [limit, setLimit] = useState(10);
-  const [specificDate, setSpecificDate] = useState('');
-  const [monthYear, setMonthYear] = useState('');
-  const [year, setYear] = useState('');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const fetchPatches = async () => {
@@ -30,9 +30,10 @@ export default function Home() {
         limit: limit.toString(),
         ...(searchTerm && { search: searchTerm }),
         ...(selectedType && { tipo: selectedType }),
-        ...(specificDate && { fecha: specificDate }),
-        ...(monthYear && { mes: monthYear }),
-        ...(year && { año: year })
+        ...(dateRange.from && { fechaDesde: dateRange.from }),
+        ...(dateRange.to && { fechaHasta: dateRange.to }),
+        ...(selectedMonths.length > 0 && { meses: selectedMonths.join(',') }),
+        ...(selectedYears.length > 0 && { años: selectedYears.join(',') })
       });
 
       const response = await fetch(`/api/patches?${params}`);
@@ -60,20 +61,22 @@ export default function Home() {
   const removeFilter = (filterToRemove: string) => {
     setActiveFilters(activeFilters.filter(filter => filter !== filterToRemove));
     // Reset corresponding state based on filter type
-    if (filterToRemove.includes('Fecha específica')) {
-      setSpecificDate('');
-    } else if (filterToRemove.includes('Mes completo')) {
-      setMonthYear('');
-    } else if (filterToRemove.includes('Año completo')) {
-      setYear('');
+    if (filterToRemove.includes('Rango de fechas')) {
+      setDateRange({ from: '', to: '' });
+    } else if (filterToRemove.includes('Mes:')) {
+      const month = filterToRemove.split(': ')[1];
+      setSelectedMonths(selectedMonths.filter(m => m !== month));
+    } else if (filterToRemove.includes('Año:')) {
+      const year = filterToRemove.split(': ')[1];
+      setSelectedYears(selectedYears.filter(y => y !== year));
     }
   };
 
   const clearAllFilters = () => {
     setActiveFilters([]);
-    setSpecificDate('');
-    setMonthYear('');
-    setYear('');
+    setDateRange({ from: '', to: '' });
+    setSelectedMonths([]);
+    setSelectedYears([]);
     setSearchTerm('');
     setSelectedType('');
   };
@@ -146,49 +149,96 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Fecha específica */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha específica</label>
-                <input
-                  type="date"
-                  value={specificDate}
-                  onChange={(e) => {
-                    setSpecificDate(e.target.value);
-                    if (e.target.value) addFilter('Fecha específica', e.target.value);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+              {/* Rango de fechas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha desde</label>
+                  <input
+                    type="date"
+                    value={dateRange.from}
+                    onChange={(e) => {
+                      const newRange = { ...dateRange, from: e.target.value };
+                      setDateRange(newRange);
+                      if (newRange.from && newRange.to) {
+                        addFilter('Rango de fechas', `${newRange.from} - ${newRange.to}`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha hasta</label>
+                  <input
+                    type="date"
+                    value={dateRange.to}
+                    onChange={(e) => {
+                      const newRange = { ...dateRange, to: e.target.value };
+                      setDateRange(newRange);
+                      if (newRange.from && newRange.to) {
+                        addFilter('Rango de fechas', `${newRange.from} - ${newRange.to}`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
 
-              {/* Mes completo */}
+              {/* Selección múltiple de meses */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mes completo</label>
-                <input
-                  type="month"
-                  value={monthYear}
-                  onChange={(e) => {
-                    setMonthYear(e.target.value);
-                    if (e.target.value) addFilter('Mes completo', e.target.value);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Meses específicos</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06',
+                    '2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12'].map(month => {
+                    const monthName = new Date(month + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                    return (
+                      <label key={month} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedMonths.includes(month)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const newMonths = [...selectedMonths, month];
+                              setSelectedMonths(newMonths);
+                              addFilter('Mes', monthName);
+                            } else {
+                              setSelectedMonths(selectedMonths.filter(m => m !== month));
+                              removeFilter(`Mes: ${monthName}`);
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm">{monthName}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Año completo */}
+              {/* Selección múltiple de años */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Año completo</label>
-                <input
-                  type="number"
-                  min="2020"
-                  max="2030"
-                  value={year}
-                  onChange={(e) => {
-                    setYear(e.target.value);
-                    if (e.target.value) addFilter('Año completo', e.target.value);
-                  }}
-                  placeholder="YYYY"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Años específicos</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['2020', '2021', '2022', '2023', '2024', '2025'].map(year => (
+                    <label key={year} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedYears.includes(year)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const newYears = [...selectedYears, year];
+                            setSelectedYears(newYears);
+                            addFilter('Año', year);
+                          } else {
+                            setSelectedYears(selectedYears.filter(y => y !== year));
+                            removeFilter(`Año: ${year}`);
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">{year}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </form>
           </div>
@@ -229,13 +279,13 @@ export default function Home() {
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Buscando...' : 'Buscar'}
             </button>
             <button
               onClick={clearAllFilters}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              className="btn btn-secondary"
             >
               Limpiar
             </button>
