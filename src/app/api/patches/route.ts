@@ -42,10 +42,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search') || '';
   const tipo = searchParams.get('tipo') || '';
-  const fechaDesde = searchParams.get('fechaDesde') || '';
-  const fechaHasta = searchParams.get('fechaHasta') || '';
-  const meses = searchParams.get('meses') || '';
-  const años = searchParams.get('años') || '';
+  const fecha = searchParams.get('fecha') || '';
+  const mes = searchParams.get('mes') || '';
+  const año = searchParams.get('año') || '';
   const limit = parseInt(searchParams.get('limit') || '10');
 
   const db = getDatabase();
@@ -76,29 +75,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Filtros de fecha
-    if (fechaDesde && fechaHasta) {
-      // Rango de fechas (formato YYYY-MM-DD -> YYYYMMDD)
-      const fechaDesdeFormateada = fechaDesde.replace(/-/g, '');
-      const fechaHastaFormateada = fechaHasta.replace(/-/g, '');
-      query += ` AND fecha BETWEEN ? AND ?`;
-      params.push(fechaDesdeFormateada, fechaHastaFormateada);
-    } else if (meses) {
-      // Múltiples meses (formato YYYY-MM -> YYYYMM%)
-      const mesesArray = meses.split(',');
-      const mesesConditions = mesesArray.map(() => 'fecha LIKE ?').join(' OR ');
-      query += ` AND (${mesesConditions})`;
-      mesesArray.forEach(mes => {
-        const mesFormateado = mes.replace(/-/g, '');
-        params.push(`${mesFormateado}%`);
-      });
-    } else if (años) {
-      // Múltiples años (formato YYYY -> YYYY%)
-      const añosArray = años.split(',');
-      const añosConditions = añosArray.map(() => 'fecha LIKE ?').join(' OR ');
-      query += ` AND (${añosConditions})`;
-      añosArray.forEach(año => {
-        params.push(`${año}%`);
-      });
+    if (fecha) {
+      // Fecha específica (formato YYYY-MM-DD -> YYYYMMDD)
+      const fechaFormateada = fecha.replace(/-/g, '');
+      query += ` AND fecha = ?`;
+      params.push(fechaFormateada);
+    } else if (mes) {
+      // Mes completo (formato YYYY-MM -> YYYYMM%)
+      const mesFormateado = mes.replace(/-/g, '');
+      query += ` AND fecha LIKE ?`;
+      params.push(`${mesFormateado}%`);
+    } else if (año) {
+      // Año completo (formato YYYY -> YYYY%)
+      query += ` AND fecha LIKE ?`;
+      params.push(`${año}%`);
     }
 
     query += ` ORDER BY fecha DESC, relevancia DESC`;
