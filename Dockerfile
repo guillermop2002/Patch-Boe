@@ -15,9 +15,6 @@ RUN npm ci
 # Copiar código fuente
 COPY . .
 
-# Compilar TypeScript para scripts
-RUN npx tsc --outDir dist src/lib/database.ts src/lib/classifier.ts src/lib/openai.ts src/lib/fechas.ts --target es2017 --module commonjs --esModuleInterop --skipLibCheck --moduleResolution node
-
 # Construir la aplicación Next.js
 RUN npm run build
 
