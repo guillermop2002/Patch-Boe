@@ -2,10 +2,7 @@
 FROM node:20-alpine AS base
 
 # Instalar dependencias necesarias incluyendo distutils para better-sqlite3
-RUN apk add --no-cache libc6-compat python3 python3-dev py3-pip make g++ sqlite
-
-# Instalar distutils para Python
-RUN pip3 install setuptools
+RUN apk add --no-cache libc6-compat python3 python3-dev py3-pip py3-setuptools make g++ sqlite
 
 WORKDIR /app
 
