@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
   try {
     let query = `
-      SELECT id, fecha, titulo, tipo, relevancia, boe_id
+      SELECT id, fecha, titulo, tipo, summary, relevance
       FROM patches
       WHERE 1=1
     `;

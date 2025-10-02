@@ -40,11 +40,11 @@ export interface Classification {
   relevance: number;     // 1..100
 }
 
-// Configuración para Groq
+// Configuración optimizada para llama-3.3-70b-versatile
 const CHUNK_SIZE = 5;
-const MODEL = 'llama-3.1-8b-instant'; // Modelo de Groq
+const MODEL = 'llama-3.3-70b-versatile'; // Modelo de Groq más potente
 const PAUSE_MS = 1500;
-const MAX_CONTENT_LENGTH = 6000;
+const MAX_CONTENT_LENGTH = 8000; // Aumentado para aprovechar la capacidad del modelo
 
 // Función para reintentar con diferentes claves en caso de rate limit
 async function retryWithDifferentKey<T>(
@@ -149,8 +149,8 @@ Responde ÚNICAMENTE con un JSON válido en este formato:
         const res = await groq.chat.completions.create({
           model: MODEL,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.2,
-          max_tokens: 2000,
+          temperature: 0.1, // Más determinístico para clasificación
+          max_tokens: 4000, // Aumentado para aprovechar el modelo más potente
         });
 
         const content = res.choices[0]?.message?.content;
