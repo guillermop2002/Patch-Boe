@@ -1,16 +1,19 @@
 # Dockerfile para Patch Legislativo
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
-# Instalar dependencias necesarias
-RUN apk add --no-cache libc6-compat python3 make g++
+# Instalar dependencias necesarias incluyendo distutils para better-sqlite3
+RUN apk add --no-cache libc6-compat python3 python3-dev py3-pip make g++ sqlite
+
+# Instalar distutils para Python
+RUN pip3 install setuptools
 
 WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar todas las dependencias (incluyendo devDependencies para build)
+RUN npm ci
 
 # Copiar código fuente
 COPY . .
@@ -32,4 +35,4 @@ ENV NODE_ENV=production
 ENV PORT=80
 
 # Comando para iniciar la aplicación
-CMD ["npm", "start"]
+CMD npx next start -p 80
