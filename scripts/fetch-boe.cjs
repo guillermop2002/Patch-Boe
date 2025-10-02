@@ -1,152 +1,147 @@
-#!/usr/bin/env node
-
 // scripts/fetch-boe.cjs
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
-const { execSync } = require('child_process');
 
-// Función para obtener la fecha de hoy en formato YYYYMMDD
-function getFechaHoy() {
-  const hoy = new Date();
-  const año = hoy.getFullYear();
-  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-  const dia = String(hoy.getDate()).padStart(2, '0');
-  return `${año}${mes}${dia}`;
+const fs   = require('fs/promises')
+const path = require('path')
+const fetch = globalThis.fetch  // Node 18+
+
+// Formatea Date → "YYYYMMDD"
+function formatDate(d) {
+  const y  = d.getFullYear()
+  const m  = String(d.getMonth()+1).padStart(2,'0')
+  const dd = String(d.getDate()   ).padStart(2,'0')
+  return `${y}${m}${dd}`
 }
 
-// Función para descargar archivo
-function descargarArchivo(url, rutaDestino) {
-  return new Promise((resolve, reject) => {
-    const archivo = fs.createWriteStream(rutaDestino);
-    
-    https.get(url, (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Error HTTP: ${response.statusCode}`));
-        return;
-      }
-      
-      response.pipe(archivo);
-      
-      archivo.on('finish', () => {
-        archivo.close();
-        resolve();
-      });
-      
-      archivo.on('error', (err) => {
-        fs.unlink(rutaDestino, () => {}); // Eliminar archivo parcial
-        reject(err);
-      });
-    }).on('error', (err) => {
-      reject(err);
-    });
-  });
+// Leer argv[2] o "today"
+let fecha = process.argv[2]
+if (fecha === 'today') fecha = formatDate(new Date())
+if (!/^\d{8}$/.test(fecha)) {
+  console.error("❌ Usa: npm run fetch-boe YYYYMMDD   o   npm run fetch-boe:today")
+  process.exit(1)
 }
 
-async function main() {
+const xmlDir  = path.join('data','xml',  fecha)
+const jsonDir = path.join('data','json', fecha)
+
+async function fetchBOE(fecha) {
+  // 0) Si ya existe xmlDir con algo → parar
   try {
-    // Obtener fecha del argumento o usar hoy
-    let fecha;
-    if (process.argv[2] === 'today') {
-      fecha = getFechaHoy();
-    } else if (process.argv[2]) {
-      fecha = process.argv[2];
-    } else {
-      console.error('❌ Uso: node fetch-boe.cjs <YYYYMMDD> | today');
-      process.exit(1);
+    const files = await fs.readdir(xmlDir)
+    if (files.length) {
+      console.log(`🟡 Ya existen XMLs para ${fecha}, no hago nada.`)
+      return
     }
+  } catch { /* no existía, seguimos */ }
 
-    console.log(`📅 Procesando BOE del ${fecha}...`);
+  // 1) Descargar sumario JSON
+  const sumUrl = `https://www.boe.es/datosabiertos/api/boe/sumario/${fecha}`
+  console.log(`🔎 Descargando sumario JSON de ${fecha}...`)
+  const sumRes = await fetch(sumUrl, { headers:{ Accept:'application/json' } })
+  if (!sumRes.ok) {
+    console.error(`❌ Error ${sumRes.status} al descargar sumario`)
+    return
+  }
+  const sumJson = await sumRes.json()
 
-    // Crear directorios necesarios
-    const directorios = [
-      'data',
-      'data/xml',
-      'data/json',
-      'data/db',
-      `data/xml/${fecha}`,
-      `data/json/${fecha}`
-    ];
-
-    directorios.forEach(dir => {
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-    });
-
-    // URL del sumario del BOE
-    const urlSumario = `https://www.boe.es/diario_boe/xml.php?id=BOE-S-${fecha}`;
-    const archivoSumario = `data/xml/sumario-${fecha}.xml`;
-
-    console.log('📥 Descargando sumario...');
-    await descargarArchivo(urlSumario, archivoSumario);
-
-    // Leer y procesar el sumario
-    const contenidoSumario = fs.readFileSync(archivoSumario, 'utf-8');
-    
-    // Extraer IDs de documentos usando regex simple
-    const regex = /id="(BOE-[A-Z]-\d{4}-\d+)"/g;
-    const documentos = [];
-    let match;
-    
-    while ((match = regex.exec(contenidoSumario)) !== null) {
-      documentos.push(match[1]);
-    }
-
-    console.log(`📄 Encontrados ${documentos.length} documentos`);
-
-    // Descargar cada documento
-    for (let i = 0; i < documentos.length; i++) {
-      const docId = documentos[i];
-      const urlDoc = `https://www.boe.es/diario_boe/xml.php?id=${docId}`;
-      const archivoDoc = `data/xml/${fecha}/${docId}.xml`;
-      
-      console.log(`📥 Descargando ${i + 1}/${documentos.length}: ${docId}`);
-      
-      try {
-        await descargarArchivo(urlDoc, archivoDoc);
-        
-        // Pequeña pausa para no sobrecargar el servidor
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
-        console.warn(`⚠️ Error descargando ${docId}: ${error.message}`);
+  // 2) Extraer todos los items (id + url_xml)
+  let diariosNode = sumJson.data?.sumario?.diario
+                   || sumJson.ListadoSumario?.sumario
+                   || []
+  const diarios = Array.isArray(diariosNode) ? diariosNode : [diariosNode]
+  const allItems = []
+  for (const d of diarios) {
+    const secciones = Array.isArray(d.seccion) ? d.seccion : [d.seccion]
+    for (const sec of secciones) {
+      if (!sec.departamento) continue
+      const deps = Array.isArray(sec.departamento) ? sec.departamento : [sec.departamento]
+      for (const dept of deps) {
+        if (!dept.epigrafe) continue
+        const epis = Array.isArray(dept.epigrafe) ? dept.epigrafe : [dept.epigrafe]
+        for (const epi of epis) {
+          if (!epi.item) continue
+          const items = Array.isArray(epi.item) ? epi.item : [epi.item]
+          for (const it of items) {
+            if (it.identificador && it.url_xml) {
+              allItems.push({ id: it.identificador, url: it.url_xml })
+            }
+          }
+        }
       }
     }
+  }
 
-    console.log('✅ Descarga completada');
+  // 3) Crear directorios
+  await fs.mkdir(xmlDir,  { recursive: true })
+  await fs.mkdir(jsonDir, { recursive: true })
 
-    // Convertir XML a JSON
-    console.log('🔄 Convirtiendo XML a JSON...');
+  // 4) Descargar XMLs y generar JSON individual
+  const { XMLParser } = require('fast-xml-parser')
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: ''
+  })
+
+  console.log(`⬇️  Descargando ${allItems.length} disposiciones...`)
+  for (const { id, url } of allItems) {
+    const xmlPath  = path.join(xmlDir,  `${id}.xml`)
+    const jsonPath = path.join(jsonDir, `${id}.json`)
+
+    process.stdout.write(`  • ${id}.xml … `)
     try {
-      execSync(`node scripts/xml-to-json.cjs ${fecha}`, { stdio: 'inherit' });
-      console.log('✅ Conversión XML a JSON completada');
-    } catch (error) {
-      console.error('❌ Error en la conversión XML a JSON:', error.message);
-      process.exit(1);
+      const r = await fetch(url)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const xml = await r.text()
+      await fs.writeFile(xmlPath, xml, 'utf-8')
+      console.log('OK')
+    } catch (e) {
+      console.log(`ERR (${e.message})`)
+      continue
     }
 
-    // Compilar TypeScript si es necesario
-    console.log('🔧 Compilando TypeScript...');
-    try {
-      execSync('npx tsc --outDir dist src/lib/database.ts src/lib/classifier.ts src/lib/openai.ts src/lib/fechas.ts --target es2017 --module commonjs --esModuleInterop --skipLibCheck --moduleResolution node', { stdio: 'inherit' });
-    } catch (error) {
-      console.warn('⚠️ Error compilando TypeScript, continuando...');
-    }
+    // Parsear contenido
+    const xmlContent = await fs.readFile(xmlPath, 'utf-8')
+    const js = parser.parse(xmlContent).documento || {}
+    const titulo = js.metadatos?.titulo?.trim() || ''
 
-    // Ejecutar procesamiento y clasificación
-    console.log('🤖 Iniciando procesamiento y clasificación...');
-    try {
-      execSync(`node dist/classifier.js ${fecha}`, { stdio: 'inherit' });
-      console.log('✅ Procesamiento completado');
-    } catch (error) {
-      console.error('❌ Error en el procesamiento:', error.message);
-      process.exit(1);
+    // Extraer todos los <p> de <texto>
+    const textoNode = js.texto || {}
+    let ps = []
+    if (Array.isArray(textoNode.p)) {
+      ps = textoNode.p
+    } else if (textoNode.p) {
+      ps = [textoNode.p]
     }
+    const paras = ps.map(p => (
+      typeof p === 'string'
+        ? p.trim()
+        : (p['#text'] || '').trim()
+    ))
+    const contenido = paras.join('\n\n')
 
+    // Escribir JSON
+    const resumen = {
+      ID:        id,
+      TITULO:    titulo,
+      CONTENIDO: contenido
+    }
+    await fs.writeFile(jsonPath, JSON.stringify(resumen, null, 2), 'utf-8')
+  }
+
+  console.log(`✅ XMLs en ${xmlDir}  y  JSONs en ${jsonDir}`)
+
+  // Clasificación automática con Groq
+  console.log('\n🤖 Iniciando clasificación automática...')
+  try {
+    // Importar dinámicamente el módulo de clasificación
+    const { classifyAndSaveToDatabase } = await import('../src/lib/classifier.js')
+    await classifyAndSaveToDatabase(fecha)
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    process.exit(1);
+    console.error('❌ Error en clasificación automática:', error.message)
+    console.log('💡 Los datos JSON están disponibles, puedes clasificar manualmente más tarde')
   }
 }
 
-main();
+fetchBOE(fecha).catch(err => {
+  console.error(err)
+  process.exit(1)
+})
