@@ -115,6 +115,16 @@ async function main() {
 
     console.log('✅ Descarga completada');
 
+    // Convertir XML a JSON
+    console.log('🔄 Convirtiendo XML a JSON...');
+    try {
+      execSync(`node scripts/xml-to-json.cjs ${fecha}`, { stdio: 'inherit' });
+      console.log('✅ Conversión XML a JSON completada');
+    } catch (error) {
+      console.error('❌ Error en la conversión XML a JSON:', error.message);
+      process.exit(1);
+    }
+
     // Compilar TypeScript si es necesario
     console.log('🔧 Compilando TypeScript...');
     try {

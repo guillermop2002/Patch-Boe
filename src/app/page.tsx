@@ -8,8 +8,8 @@ interface Patch {
   fecha: string;
   titulo: string;
   tipo: string;
-  relevancia: number;
-  boe_id: string;
+  summary: string;
+  relevance: number;
 }
 
 export default function Home() {
@@ -262,12 +262,12 @@ export default function Home() {
                         <div className="patch-meta">
                           <span className="patch-date">📅 {formatDate(patch.fecha)}</span>
                           <a
-                            href={`https://www.boe.es/diario_boe/txt.php?id=${patch.boe_id}`}
+                            href={`https://www.boe.es/diario_boe/txt.php?id=${patch.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="patch-link"
                           >
-                            📄 {patch.boe_id}
+                            📄 {patch.id}
                           </a>
                         </div>
                       </div>
@@ -276,7 +276,7 @@ export default function Home() {
                           {patch.tipo.toUpperCase()}
                         </span>
                         <span className="patch-relevance">
-                          {patch.relevancia}/100
+                          {patch.relevance}/100
                         </span>
                       </div>
                     </div>
