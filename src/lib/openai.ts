@@ -1,8 +1,15 @@
 // src/lib/openai.ts
 import Groq from 'groq-sdk';
-import type { PromptData } from './boe';
 import fs from 'fs';
 import path from 'path';
+
+// Definir el tipo PromptData aquí
+interface PromptData {
+  id: string;
+  fecha?: string;
+  titulo: string;
+  intro: string;
+}
 
 // Configuración de claves de Groq en rotación
 const GROQ_API_KEYS = [
