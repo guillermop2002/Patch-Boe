@@ -62,12 +62,12 @@ export default function Home() {
     const isBuff = patch.tipo === 'buff'
 
     return (
-      <article key={${patch.id}-} className="patch-card">
+      <article key={`${patch.id}-${patch.fecha}`} className="patch-card">
         {/* Header con badges */}
         <div className="patch-header">
           <div className="patch-content">
             <div className="patch-badges">
-              <span className={patch-badge }>
+              <span className={`patch-badge ${isBuff ? 'patch-badge-buff' : 'patch-badge-nerf'}`}>
                 {isBuff ? '🔼 BUFF' : '🔽 NERF'}
               </span>
               <span className="patch-relevance">
@@ -89,11 +89,11 @@ export default function Home() {
         {/* ID como enlace al BOE */}
         <div className="text-right">
           <a
-            href={https://www.boe.es/diario_boe/txt.php?id=}
+            href={`https://www.boe.es/diario_boe/txt.php?id=${patch.id}`}
             target="_blank"
             rel="noopener noreferrer"
             className="patch-link text-xs font-mono"
-            title={Ver  en BOE oficial}
+            title={`Ver ${patch.id} en BOE oficial`}
           >
             📄 {patch.id}
           </a>
