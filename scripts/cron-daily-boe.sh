@@ -72,12 +72,12 @@ calculate_previous_day() {
 check_boe_availability() {
     local fecha=$1
     local api_url="https://www.boe.es/datosabiertos/api/boe/sumario/$fecha"
-    
+
     log_info "Verificando disponibilidad del BOE para fecha: $fecha"
     log_info "URL: $api_url"
-    
-    # Hacer petición GET y capturar código de respuesta
-    local http_code=$(curl -s -o /tmp/boe_response.xml -w "%{http_code}" "$api_url")
+
+    # Hacer petición GET y capturar código de respuesta (con header Accept)
+    local http_code=$(curl -s -H "Accept: application/xml" -o /tmp/boe_response.xml -w "%{http_code}" "$api_url")
     
     log_info "Código HTTP recibido: $http_code"
     
