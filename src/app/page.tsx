@@ -1,292 +1,207 @@
-'use client';
+﻿'use client'
 
-import { useState } from 'react';
-import Header from '../components/Header';
-
-interface Patch {
-  id: string;
-  fecha: string;
-  titulo: string;
-  tipo: string;
-  summary: string;
-  relevance: number;
-}
+import React, { useState, useEffect } from 'react'
+import { PatchEntry, getPatchesByFecha, getFechasDisponibles, buscarPatches } from '@/lib/api-client'
+import { getFechaHoy, formatearFecha } from '@/lib/fechas'
+import BuscadorAvanzado, { CriteriosBusqueda } from '@/components/BuscadorAvanzado'
 
 export default function Home() {
-  const [patches, setPatches] = useState<Patch[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [limit, setLimit] = useState(10);
-  const [specificDate, setSpecificDate] = useState('');
-  const [monthYear, setMonthYear] = useState('');
-  const [year, setYear] = useState('');
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [patchesHoy, setPatchesHoy] = useState<PatchEntry[]>([])
+  const [patchesBusqueda, setPatchesBusqueda] = useState<PatchEntry[]>([])
+  const [fechasDisponibles, setFechasDisponibles] = useState<string[]>([])
+  const [mostrandoBusqueda, setMostrandoBusqueda] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const fetchPatches = async () => {
+  const fechaHoy = getFechaHoy()
+  const fechaHoyFormateada = formatearFecha(fechaHoy)
+
+  useEffect(() => {
+    cargarDatos()
+  }, [])
+
+  const cargarDatos = async () => {
     try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedType && { tipo: selectedType }),
-        ...(specificDate && { fecha: specificDate }),
-        ...(monthYear && { mes: monthYear }),
-        ...(year && { año: year })
-      });
+      // Cargar patches de hoy
+      const { patches: patchesDeHoy } = await getPatchesByFecha(fechaHoy)
+      setPatchesHoy(patchesDeHoy)
 
-      const response = await fetch(`/api/patches?${params}`);
-      const data = await response.json();
-      setPatches(data.patches || []);
+      // Cargar fechas disponibles
+      const fechas = await getFechasDisponibles()
+      setFechasDisponibles(fechas)
+
     } catch (error) {
-      console.error('Error fetching patches:', error);
+      console.error('Error cargando datos:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchPatches();
-  };
+  const handleBusqueda = async (criterios: CriteriosBusqueda) => {
+    try {
+      const resultados = await buscarPatches({
+        fechasEspecificas: criterios.fechasEspecificas,
+        meses: criterios.meses,
+        años: criterios.años,
+        tipoFiltro: criterios.tipoFiltro,
+        limite: criterios.limite
+      })
 
-  const addFilter = (type: string, value: string) => {
-    const filterText = `${type}: ${value}`;
-    if (!activeFilters.includes(filterText)) {
-      setActiveFilters([...activeFilters, filterText]);
+      setPatchesBusqueda(resultados)
+      setMostrandoBusqueda(true)
+    } catch (error) {
+      console.error('Error en búsqueda:', error)
     }
-  };
+  }
 
-  const removeFilter = (filterToRemove: string) => {
-    setActiveFilters(activeFilters.filter(filter => filter !== filterToRemove));
-    // Reset corresponding state based on filter type
-    if (filterToRemove.includes('Fecha específica')) {
-      setSpecificDate('');
-    } else if (filterToRemove.includes('Mes completo')) {
-      setMonthYear('');
-    } else if (filterToRemove.includes('Año completo')) {
-      setYear('');
-    }
-  };
+  const volverAHoy = () => {
+    setMostrandoBusqueda(false)
+    setPatchesBusqueda([])
+  }
 
-  const clearAllFilters = () => {
-    setActiveFilters([]);
-    setSpecificDate('');
-    setMonthYear('');
-    setYear('');
-    setSearchTerm('');
-    setSelectedType('');
-  };
+  const renderPatch = (patch: PatchEntry) => {
+    const isBuff = patch.tipo === 'buff'
 
-  const formatDate = (dateStr: string) => {
-    if (dateStr.length === 8) {
-      const year = dateStr.substring(0, 4);
-      const month = dateStr.substring(4, 6);
-      const day = dateStr.substring(6, 8);
-      return `${day}/${month}/${year}`;
-    }
-    return dateStr;
-  };
-
-
-
-  return (
-    <div>
-      <Header />
-
-      <main className="container">
-        <h1 className="main-title">🇪🇸 Patch Legislativo</h1>
-        <p className="main-subtitle">
-          Descubre los cambios normativos del BOE como si fueran patches de videojuegos
-        </p>
-
-        {/* Buscador de Patches */}
-        <div className="search-card">
-          <h2 className="search-title">Buscador de Patches</h2>
-          <p className="search-subtitle">Encuentra cambios normativos por fecha y tipo</p>
-
-          <form onSubmit={handleSearch}>
-            {/* Tipo y Resultados */}
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Tipo</label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="form-select"
-                >
-                  <option value="">Ambos</option>
-                  <option value="buff">BUFF</option>
-                  <option value="nerf">NERF</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Resultados</label>
-                <select
-                  value={limit}
-                  onChange={(e) => setLimit(Number(e.target.value))}
-                  className="form-select"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>Todo</option>
-                </select>
-              </div>
+    return (
+      <article key={${patch.id}-} className="patch-card">
+        {/* Header con badges */}
+        <div className="patch-header">
+          <div className="patch-content">
+            <div className="patch-badges">
+              <span className={patch-badge }>
+                {isBuff ? '🔼 BUFF' : '🔽 NERF'}
+              </span>
+              <span className="patch-relevance">
+                Relevancia: {patch.relevance}/100
+              </span>
             </div>
-
-            {/* Fecha específica */}
-            <div className="form-group">
-              <label className="form-label">Fecha específica</label>
-              <input
-                type="date"
-                value={specificDate}
-                onChange={(e) => {
-                  setSpecificDate(e.target.value);
-                  if (e.target.value) addFilter('Fecha específica', e.target.value);
-                }}
-                className="form-input"
-              />
-            </div>
-
-            {/* Mes completo */}
-            <div className="form-group">
-              <label className="form-label">Mes completo</label>
-              <input
-                type="month"
-                value={monthYear}
-                onChange={(e) => {
-                  setMonthYear(e.target.value);
-                  if (e.target.value) addFilter('Mes completo', e.target.value);
-                }}
-                className="form-input"
-              />
-            </div>
-
-            {/* Año completo */}
-            <div className="form-group">
-              <label className="form-label">Año completo</label>
-              <input
-                type="number"
-                min="2020"
-                max="2030"
-                value={year}
-                onChange={(e) => {
-                  setYear(e.target.value);
-                  if (e.target.value) addFilter('Año completo', e.target.value);
-                }}
-                placeholder="YYYY"
-                className="form-input"
-              />
-            </div>
-          </form>
-        </div>
-
-        {/* Filtros activos */}
-        {activeFilters.length > 0 && (
-          <div className="active-filters">
-            <div className="active-filters-header">
-              <span className="active-filters-title">Filtros activos:</span>
-              <button onClick={clearAllFilters} className="clear-all-btn">
-                Limpiar
-              </button>
-            </div>
-            <div className="filter-tags">
-              {activeFilters.map((filter, index) => (
-                <span key={index} className="filter-tag">
-                  📅 {filter}
-                  <button
-                    onClick={() => removeFilter(filter)}
-                    className="filter-tag-remove"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+            <div className="patch-meta">
+              <span className="patch-date">📅 {formatearFecha(patch.fecha)}</span>
             </div>
           </div>
-        )}
-
-        {/* Botones de acción */}
-        <div className="btn-group">
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className="btn btn-primary"
-          >
-            {loading ? 'Buscando...' : 'Buscar'}
-          </button>
-          <button
-            onClick={clearAllFilters}
-            className="btn btn-secondary"
-          >
-            Limpiar
-          </button>
         </div>
 
-        {/* Resultados */}
-        <div className="results-card">
-          <div className="results-header">
-            <div className="results-title">
-              <span>📊</span>
-              Resultados de búsqueda ({patches.length})
-            </div>
+        {/* Título */}
+        <h2 className="patch-title">{patch.titulo}</h2>
+
+        {/* Resumen */}
+        <p className="text-gray-600 text-sm mb-3">{patch.summary}</p>
+
+        {/* ID como enlace al BOE */}
+        <div className="text-right">
+          <a
+            href={https://www.boe.es/diario_boe/txt.php?id=}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="patch-link text-xs font-mono"
+            title={Ver  en BOE oficial}
+          >
+            📄 {patch.id}
+          </a>
+        </div>
+      </article>
+    )
+  }
+
+  if (loading) {
+    return (
+      <main className="container">
+        <div className="text-center py-20">
+          <div className="text-6xl mb-4">⏳</div>
+          <p className="text-xl text-gray-600">Cargando datos...</p>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="container">
+      {/* Navegación */}
+      <div className="text-center mb-6">
+        <a
+          href="/acerca"
+          className="inline-flex items-center px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+        >
+          ℹ️ Acerca del proyecto
+        </a>
+      </div>
+
+      <h1 className="main-title text-center mb-4">
+        🇪🇸 Patch Legislativo
+      </h1>
+
+      <p className="text-center text-gray-600 mb-8">
+        Descubre los cambios normativos del BOE como si fueran parches de videojuegos
+      </p>
+
+      {/* Buscador Avanzado */}
+      <BuscadorAvanzado
+        onBuscar={handleBusqueda}
+        fechasDisponibles={fechasDisponibles}
+      />
+
+      {/* Resultados */}
+      {mostrandoBusqueda ? (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">
+              📊 Resultados de búsqueda ({patchesBusqueda.length})
+            </h2>
             <button
-              onClick={() => window.location.reload()}
-              className="back-to-today"
+              onClick={volverAHoy}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
             >
-              🔄 Volver a hoy
+              ← Volver a hoy
             </button>
           </div>
 
-          <div className="results-content">
-            {loading ? (
-              <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Cargando patches...</p>
-              </div>
-            ) : patches.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">🔍</div>
-                <p className="empty-title">No se encontraron resultados</p>
-                <p className="empty-subtitle">Intenta con otros criterios de búsqueda</p>
-              </div>
-            ) : (
-              <div className="patches-list">
-                {patches.map((patch) => (
-                  <div key={patch.id} className="patch-card">
-                    <div className="patch-header">
-                      <div className="patch-content">
-                        <h3 className="patch-title">{patch.titulo}</h3>
-                        <div className="patch-meta">
-                          <span className="patch-date">📅 {formatDate(patch.fecha)}</span>
-                          <a
-                            href={`https://www.boe.es/diario_boe/txt.php?id=${patch.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="patch-link"
-                          >
-                            📄 {patch.id}
-                          </a>
-                        </div>
-                      </div>
-                      <div className="patch-badges">
-                        <span className={`patch-badge patch-badge-${patch.tipo.toLowerCase()}`}>
-                          {patch.tipo.toUpperCase()}
-                        </span>
-                        <span className="patch-relevance">
-                          {patch.relevance}/100
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {patchesBusqueda.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🔍</div>
+              <p className="empty-title">No se encontraron resultados</p>
+              <p className="empty-subtitle">Intenta con otros criterios de búsqueda</p>
+            </div>
+          ) : (
+            <div className="patches-list">
+              {patchesBusqueda.map(renderPatch)}
+            </div>
+          )}
         </div>
-      </main>
-    </div>
-  );
+      ) : (
+        <div>
+          <h2 className="text-2xl font-bold text-center mb-6">
+            �� Parches de hoy — {fechaHoyFormateada}
+          </h2>
+
+          {patchesHoy.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📭</div>
+              <p className="empty-title">No hay parches para hoy</p>
+              <p className="empty-subtitle">
+                Utiliza el buscador para explorar fechas anteriores
+              </p>
+            </div>
+          ) : (
+            <div>
+              {/* Estadísticas */}
+              <div className="text-center mb-6">
+                <div className="inline-flex gap-4 bg-gray-100 rounded-lg px-4 py-2">
+                  <span className="text-green-600 font-semibold">
+                    🔼 {patchesHoy.filter(p => p.tipo === 'buff').length} BUFFS
+                  </span>
+                  <span className="text-red-600 font-semibold">
+                    🔽 {patchesHoy.filter(p => p.tipo === 'nerf').length} NERFS
+                  </span>
+                  <span className="text-gray-600">📊 {patchesHoy.length} total</span>
+                </div>
+              </div>
+
+              <div className="patches-list">
+                {patchesHoy.map(renderPatch)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </main>
+  )
 }
