@@ -178,7 +178,7 @@ ${batchPrompts}
 
 INSTRUCCIONES EQUILIBRADAS:
 1. Sé CONSERVADOR pero no extremo con las puntuaciones altas (70+)
-2. El 70% de documentos deberían ser ACTUALIZACIÓN, 30% BUFF/NERF
+2. El 60% de documentos deberían ser ACTUALIZACIÓN, 40% BUFF/NERF
 3. Clasifica como BUFF/NERF si hay impacto sectorial significativo o nacional
 4. USA VALORES ÚNICOS Y VARIADOS del 1-100: 23, 37, 41, 46, 52, 59, 64, 71, etc.
 5. EVITA PUNTUACIONES REPETIDAS: Si ya usaste 45, usa 43, 47, 49, 51, etc.
@@ -186,6 +186,7 @@ INSTRUCCIONES EQUILIBRADAS:
 7. Convocatorias sectoriales, ayudas específicas → BUFF/NERF según impacto
 8. Si dudas entre buff/nerf y actualización → evalúa el impacto sectorial
 9. DISTRIBUYE las puntuaciones: usa todo el rango 1-100 de forma equilibrada
+10. IMPORTANTE: Si un documento tiene algún impacto sectorial o afecta a grupos específicos, clasifícalo como BUFF/NERF, no como ACTUALIZACIÓN
 
 Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
 {
