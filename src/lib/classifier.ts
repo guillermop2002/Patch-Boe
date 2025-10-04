@@ -34,7 +34,7 @@ const MAX_CONTENT_LENGTH = 8000; // Aumentado para aprovechar la capacidad del m
 
 // MODO DE PRUEBA: Limitar a 20 documentos para evitar rate limit durante pruebas
 // IMPORTANTE: Cambiar a 0 para procesar TODOS los documentos en producción
-const TEST_MODE_LIMIT = 20; // 0 = sin límite, >0 = limitar a N documentos
+const TEST_MODE_LIMIT = 0; // 0 = sin límite, >0 = limitar a N documentos
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
