@@ -120,7 +120,10 @@ show_status() {
             
             while [ "$fecha_temp" != "$last_date" ]; do
                 dias_procesados=$((dias_procesados + 1))
-                fecha_temp=$(date -d "$fecha_temp -1 day" +%Y%m%d 2>/dev/null || echo "error")
+                local year=${fecha_temp:0:4}
+                local month=${fecha_temp:4:2}
+                local day=${fecha_temp:6:2}
+                fecha_temp=$(date -d "$year-$month-$day -1 day" +%Y%m%d 2>/dev/null || echo "error")
                 if [ "$fecha_temp" = "error" ]; then
                     break
                 fi
