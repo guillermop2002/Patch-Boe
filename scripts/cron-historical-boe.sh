@@ -78,17 +78,17 @@ calculate_previous_date() {
     local fecha=$1
     
     # Convertir YYYYMMDD a formato para date
-    local año=${fecha:0:4}
-    local mes=${fecha:4:2}
-    local dia=${fecha:6:2}
+    local year=${fecha:0:4}
+    local month=${fecha:4:2}
+    local day=${fecha:6:2}
     
     # Calcular fecha anterior
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        date -j -v-1d -f "%Y-%m-%d" "$año-$mes-$dia" +%Y%m%d
+        date -j -v-1d -f "%Y-%m-%d" "$year-$month-$day" +%Y%m%d
     else
         # Linux
-        date -d "$año-$mes-$dia -1 day" +%Y%m%d
+        date -d "$year-$month-$day -1 day" +%Y%m%d
     fi
 }
 
