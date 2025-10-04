@@ -1,60 +1,53 @@
-// src/lib/classifier.ts
+// src/lib/classifier-historical.ts
+// Variante del classifier para datos históricos con claves API exclusivas
 import Groq from 'groq-sdk';
 import { getDatabase, PatchEntry } from './database';
 import fs from 'fs';
 import path from 'path';
 
-// Configuración de claves de Groq en rotación
-const GROQ_API_KEYS = [
-  process.env.GROQ_API_KEY_1,
-  process.env.GROQ_API_KEY_2,
-  process.env.GROQ_API_KEY_3,
-  process.env.GROQ_API_KEY_4,
+// Configuración de claves de Groq EXCLUSIVAS para datos históricos
+const GROQ_API_KEYS_HISTORICAL = [
+  process.env.GROQ_API_KEY_HISTORICAL_1,
+  process.env.GROQ_API_KEY_HISTORICAL_2,
+  process.env.GROQ_API_KEY_HISTORICAL_3,
+  process.env.GROQ_API_KEY_HISTORICAL_4,
 ].filter(Boolean) as string[];
 
 let currentKeyIndex = 0;
 
-// Función para obtener el cliente Groq con rotación de claves
-function getGroqClient(): Groq {
-  if (GROQ_API_KEYS.length === 0) {
-    throw new Error('No se encontraron claves de Groq configuradas');
-  }
-  
-  const apiKey = GROQ_API_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
+// Función para obtener el cliente Groq con rotación de claves históricas
+function getGroqClientHistorical(): Groq {
+  const apiKey = GROQ_API_KEYS_HISTORICAL[currentKeyIndex];
+  currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS_HISTORICAL.length;
   
   return new Groq({ apiKey });
 }
 
 // Configuración optimizada para llama-3.3-70b-versatile
 const MODEL = 'llama-3.3-70b-versatile';
-const CHUNK_SIZE = 5; // Aumentado para aprovechar mejor el modelo más potente
-const PAUSE_MS = 1500; // Reducido ya que el modelo es más estable
-const MAX_CONTENT_LENGTH = 8000; // Aumentado para aprovechar la capacidad del modelo
-
-// MODO DE PRUEBA: Limitar a 20 documentos para evitar rate limit durante pruebas
-// IMPORTANTE: Cambiar a 0 para procesar TODOS los documentos en producción
-const TEST_MODE_LIMIT = 0; // 0 = sin límite, >0 = limitar a N documentos
+const CHUNK_SIZE = 5;
+const PAUSE_MS = 1500;
+const MAX_CONTENT_LENGTH = 8000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Función para reintentar con diferentes claves en caso de rate limit
-async function retryWithDifferentKey<T>(
+async function retryWithDifferentKeyHistorical<T>(
   operation: (client: Groq) => Promise<T>,
-  maxRetries: number = GROQ_API_KEYS.length
+  maxRetries: number = GROQ_API_KEYS_HISTORICAL.length
 ): Promise<T> {
   let lastError: Error | null = null;
   
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const client = getGroqClient();
+      const client = getGroqClientHistorical();
       return await operation(client);
     } catch (error: any) {
       lastError = error;
       if (error.message?.match(/rate limit|429/gi)) {
-        console.warn(`⚠️  Rate limit alcanzado con clave ${currentKeyIndex}, rotando...`);
+        console.warn(`⚠️  Rate limit alcanzado con clave histórica ${currentKeyIndex}, rotando...`);
         await sleep(PAUSE_MS);
         continue;
       }
@@ -62,7 +55,7 @@ async function retryWithDifferentKey<T>(
     }
   }
   
-  throw lastError || new Error('Todas las claves de Groq han fallado');
+  throw lastError || new Error('Todas las claves históricas de Groq han fallado');
 }
 
 interface ClassificationResult {
@@ -96,7 +89,7 @@ interface PromptData {
   intro: string;
 }
 
-async function classifyItems(data: PromptData[]): Promise<ClassificationResult[]> {
+async function classifyItemsHistorical(data: PromptData[]): Promise<ClassificationResult[]> {
   const all: ClassificationResult[] = [];
 
   for (let i = 0; i < data.length; i += CHUNK_SIZE) {
@@ -201,14 +194,14 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
 }`;
 
     try {
-      console.log(`🤖 Clasificando lote ${Math.floor(i/CHUNK_SIZE) + 1}/${Math.ceil(data.length/CHUNK_SIZE)} (${batch.length} items)...`);
+      console.log(`🤖 [HISTÓRICO] Clasificando lote ${Math.floor(i/CHUNK_SIZE) + 1}/${Math.ceil(data.length/CHUNK_SIZE)} (${batch.length} items)...`);
       
-      const result = await retryWithDifferentKey(async (groq) => {
+      const result = await retryWithDifferentKeyHistorical(async (groq) => {
         const res = await groq.chat.completions.create({
           model: MODEL,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1, // Más determinístico para clasificación
-          max_tokens: 4000, // Aumentado para aprovechar el modelo más potente
+          temperature: 0.1,
+          max_tokens: 4000,
         });
 
         const content = res.choices[0]?.message?.content;
@@ -229,7 +222,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
       const validResults = result.filter(validateClassification);
 
       if (validResults.length !== result.length) {
-        console.warn(`⚠️  Algunos resultados del lote ${i}-${i+CHUNK_SIZE} no pasaron validación`);
+        console.warn(`⚠️  [HISTÓRICO] Algunos resultados del lote ${i}-${i+CHUNK_SIZE} no pasaron validación`);
       }
 
       all.push(...validResults);
@@ -237,11 +230,11 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
       // Mostrar progreso
       validResults.forEach((r: ClassificationResult) => {
         const emoji = r.tipo === 'buff' ? '🔼' : r.tipo === 'nerf' ? '🔽' : '⚙️';
-        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100): ${r.summary.substring(0, 80)}...`);
+        console.log(`  ${emoji} [HISTÓRICO] ${r.tipo.toUpperCase()} (${r.relevance}/100): ${r.summary.substring(0, 80)}...`);
       });
       
     } catch (e: any) {
-      console.error(`❌ Error en lote ${i}-${i+CHUNK_SIZE}:`, e.message);
+      console.error(`❌ [HISTÓRICO] Error en lote ${i}-${i+CHUNK_SIZE}:`, e.message);
       if (e.message.match(/rate limit|429/gi)) {
         await sleep(PAUSE_MS * 2);
         i -= CHUNK_SIZE;
@@ -257,44 +250,37 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
   return all;
 }
 
-// Función principal para clasificar y guardar en base de datos
-export async function classifyAndSaveToDatabase(fecha: string): Promise<void> {
-  console.log(`🚀 Iniciando clasificación automática para fecha: ${fecha}`);
+// Función principal para clasificar y guardar en base de datos (versión histórica)
+export async function classifyAndSaveToDatabaseHistorical(fecha: string): Promise<void> {
+  console.log(`🚀 [HISTÓRICO] Iniciando clasificación automática para fecha: ${fecha}`);
   
   const db = getDatabase();
   
   // Verificar si ya existen datos para esta fecha
   if (db.hasDataForDate(fecha)) {
-    console.log(`✅ Ya existen datos clasificados para ${fecha}, saltando...`);
+    console.log(`✅ [HISTÓRICO] Ya existen datos clasificados para ${fecha}, saltando...`);
     return;
   }
 
   const jsonDir = path.join(process.cwd(), 'data', 'json', fecha);
   if (!fs.existsSync(jsonDir)) {
-    console.error(`❌ No existe directorio: ${jsonDir}`);
+    console.error(`❌ [HISTÓRICO] No existe directorio: ${jsonDir}`);
     return;
   }
 
   const files = fs.readdirSync(jsonDir).filter(f => f.endsWith('.json'));
   if (files.length === 0) {
-    console.error(`❌ No hay archivos JSON en: ${jsonDir}`);
+    console.error(`❌ [HISTÓRICO] No hay archivos JSON en: ${jsonDir}`);
     return;
   }
 
-  // Aplicar límite de prueba si está configurado
-  const filesToProcess = TEST_MODE_LIMIT > 0 ? files.slice(0, TEST_MODE_LIMIT) : files;
-
-  if (TEST_MODE_LIMIT > 0) {
-    console.log(`⚠️  MODO DE PRUEBA: Limitando a ${TEST_MODE_LIMIT} documentos de ${files.length} totales`);
-  }
-
-  console.log(`📊 Procesando ${filesToProcess.length} documentos...`);
+  console.log(`📊 [HISTÓRICO] Procesando ${files.length} documentos...`);
 
   // Leer todos los archivos JSON
   const promptData: PromptData[] = [];
   const originalData: { [key: string]: any } = {};
 
-  for (const file of filesToProcess) {
+  for (const file of files) {
     const filePath = path.join(jsonDir, file);
     try {
       const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -305,18 +291,18 @@ export async function classifyAndSaveToDatabase(fecha: string): Promise<void> {
       });
       originalData[jsonData.ID] = jsonData;
     } catch (e: any) {
-      console.error(`❌ Error procesando ${filePath}:`, e.message);
+      console.error(`❌ [HISTÓRICO] Error procesando ${filePath}:`, e.message);
     }
   }
 
   if (promptData.length === 0) {
-    console.error('❌ No se pudieron procesar archivos JSON');
+    console.error('❌ [HISTÓRICO] No se pudieron procesar archivos JSON');
     return;
   }
 
-  // Clasificar con Groq
-  console.log('🤖 Iniciando clasificación con Groq...\n');
-  const classifications = await classifyItems(promptData);
+  // Clasificar con Groq (versión histórica)
+  console.log('🤖 [HISTÓRICO] Iniciando clasificación con Groq...\n');
+  const classifications = await classifyItemsHistorical(promptData);
 
   // Filtrar solo BUFF y NERF, preparar para base de datos
   const patchesToSave: Omit<PatchEntry, 'created_at'>[] = [];
@@ -340,17 +326,17 @@ export async function classifyAndSaveToDatabase(fecha: string): Promise<void> {
 
   // Guardar en base de datos
   if (patchesToSave.length > 0) {
-    console.log(`💾 Guardando ${patchesToSave.length} patches relevantes en base de datos...`);
+    console.log(`💾 [HISTÓRICO] Guardando ${patchesToSave.length} patches relevantes en base de datos...`);
     db.insertPatches(patchesToSave);
     
     const stats = db.getStatsByDate(fecha);
-    console.log(`✅ Guardado completado:`);
+    console.log(`✅ [HISTÓRICO] Guardado completado:`);
     console.log(`   🔼 BUFFS: ${stats.buffs}`);
     console.log(`   🔽 NERFS: ${stats.nerfs}`);
     console.log(`   📊 TOTAL: ${stats.total}`);
   } else {
-    console.log(`ℹ️  No se encontraron BUFFS o NERFS relevantes para ${fecha}`);
+    console.log(`ℹ️  [HISTÓRICO] No se encontraron BUFFS o NERFS relevantes para ${fecha}`);
   }
 
-  console.log(`🎉 Clasificación automática completada para ${fecha}\n`);
+  console.log(`🎉 [HISTÓRICO] Clasificación automática completada para ${fecha}\n`);
 }
