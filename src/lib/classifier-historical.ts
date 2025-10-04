@@ -103,18 +103,18 @@ async function classifyItemsHistorical(data: PromptData[]): Promise<Classificati
     }).join('\n\n---\n\n');
 
     const prompt = `
-Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
+Eres un analista legislativo CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
 
-🚨 CRÍTICO: Sé EXTREMADAMENTE ESTRICTO. El 95% de documentos del BOE son cambios administrativos menores que NO merecen puntuaciones altas.
+⚠️ IMPORTANTE: Sé ESTRICTO pero EQUILIBRADO. La mayoría de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto nacional o sectorial significativo.
 
 CRITERIOS DE CLASIFICACIÓN:
-- **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos (SOLO si tienen relevancia nacional)
-- **NERF**: Medidas que restringen, endurecen condiciones o reducen beneficios (SOLO si tienen relevancia nacional)
-- **ACTUALIZACIÓN**: Cambios técnicos, administrativos, nombramientos, convocatorias locales, correcciones, etc. (LA MAYORÍA DE DOCUMENTOS)
+- **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos (con relevancia nacional o sectorial significativa)
+- **NERF**: Medidas que restringen, endurecen condiciones o reducen beneficios (con relevancia nacional o sectorial significativa)
+- **ACTUALIZACIÓN**: Cambios técnicos, administrativos, nombramientos, convocatorias locales, correcciones, etc.
 
-🔴 REGLA CRÍTICA: Si un documento NO tiene impacto nacional significativo, clasifícalo como ACTUALIZACIÓN, NO como buff/nerf.
+🔴 REGLA EQUILIBRADA: Si un documento tiene impacto sectorial significativo o afecta a grupos amplios, puede ser BUFF/NERF. Solo ACTUALIZACIÓN si es puramente administrativo.
 
-ESCALA DE RELEVANCIA (1-100) - ULTRA-CONSERVADOR:
+ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 - **95-100**: Reformas constitucionales, presupuestos generales del Estado, leyes orgánicas fundamentales
   Ejemplo: "Ley Orgánica de reforma del Código Penal" → 97
   ⚠️ SOLO <1% de documentos deberían estar aquí
@@ -170,16 +170,17 @@ EJEMPLOS CONCRETOS DE CLASIFICACIÓN ULTRA-ESTRICTA:
 DOCUMENTOS A ANALIZAR:
 ${batchPrompts}
 
-INSTRUCCIONES ULTRA-CRÍTICAS:
-1. SÉ ULTRA-CONSERVADOR con las puntuaciones altas (70+)
-2. El 95% de documentos deberían ser ACTUALIZACIÓN (no buff/nerf)
-3. Solo clasifica como BUFF/NERF si hay impacto nacional real y medible
+INSTRUCCIONES EQUILIBRADAS:
+1. Sé CONSERVADOR pero no extremo con las puntuaciones altas (70+)
+2. El 60% de documentos deberían ser ACTUALIZACIÓN, 40% BUFF/NERF
+3. Clasifica como BUFF/NERF si hay impacto sectorial significativo o nacional
 4. USA VALORES ÚNICOS Y VARIADOS del 1-100: 23, 37, 41, 46, 52, 59, 64, 71, etc.
 5. EVITA PUNTUACIONES REPETIDAS: Si ya usaste 45, usa 43, 47, 49, 51, etc.
-6. Nombramientos, convocatorias locales, correcciones → ACTUALIZACIÓN
-7. Recursos, admisiones a trámite, anuncios → ACTUALIZACIÓN
-8. Si dudas entre buff/nerf y actualización → elige ACTUALIZACIÓN
-9. DISTRIBUYE las puntuaciones: no concentres todo en 50-60, usa todo el rango 1-100
+6. Nombramientos individuales, correcciones menores → ACTUALIZACIÓN
+7. Convocatorias sectoriales, ayudas específicas → BUFF/NERF según impacto
+8. Si dudas entre buff/nerf y actualización → evalúa el impacto sectorial
+9. DISTRIBUYE las puntuaciones: usa todo el rango 1-100 de forma equilibrada
+10. IMPORTANTE: Si un documento tiene algún impacto sectorial o afecta a grupos específicos, clasifícalo como BUFF/NERF, no como ACTUALIZACIÓN
 
 Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
 {
