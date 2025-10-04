@@ -32,6 +32,10 @@ const CHUNK_SIZE = 5; // Aumentado para aprovechar mejor el modelo más potente
 const PAUSE_MS = 1500; // Reducido ya que el modelo es más estable
 const MAX_CONTENT_LENGTH = 8000; // Aumentado para aprovechar la capacidad del modelo
 
+// MODO DE PRUEBA: Limitar a 20 documentos para evitar rate limit durante pruebas
+// IMPORTANTE: Cambiar a 0 para procesar TODOS los documentos en producción
+const TEST_MODE_LIMIT = 20; // 0 = sin límite, >0 = limitar a N documentos
+
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -106,43 +110,82 @@ async function classifyItems(data: PromptData[]): Promise<ClassificationResult[]
     }).join('\n\n---\n\n');
 
     const prompt = `
-Eres un experto analista legislativo que clasifica cambios normativos españoles como si fueran parches de videojuego.
+Eres un analista legislativo EXTREMADAMENTE CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
+
+⚠️ IMPORTANTE: Sé MUY ESTRICTO. La mayoría de documentos del BOE son cambios administrativos menores que NO merecen puntuaciones altas.
 
 CRITERIOS DE CLASIFICACIÓN:
-- **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos de ciudadanos/empresas
-- **NERF**: Medidas que restringen, endurecen condiciones o reducen beneficios
-- **ACTUALIZACIÓN**: Cambios técnicos, procedimentales o administrativos sin impacto significativo
+- **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos (SOLO si tienen relevancia nacional)
+- **NERF**: Medidas que restringen, endurecen condiciones o reducen beneficios (SOLO si tienen relevancia nacional)
+- **ACTUALIZACIÓN**: Cambios técnicos, administrativos, nombramientos, convocatorias locales, correcciones, etc. (LA MAYORÍA DE DOCUMENTOS)
 
-CRITERIOS DE RELEVANCIA (1-100):
-- 90-100: Impacto nacional masivo (millones de personas)
-- 70-89: Impacto sectorial importante (cientos de miles)
-- 50-69: Impacto moderado (decenas de miles)
-- 30-49: Impacto específico (miles de personas)
-- 10-29: Impacto técnico o muy específico
-- 1-9: Cambios menores o administrativos
+🔴 REGLA CRÍTICA: Si un documento NO tiene impacto nacional significativo, clasifícalo como ACTUALIZACIÓN, NO como buff/nerf.
 
-EJEMPLOS DE REFERENCIA:
-1. "Ley de aumento del salario mínimo interprofesional" → BUFF, 92 (afecta a millones)
-2. "Real Decreto de nuevo impuesto sobre bebidas azucaradas" → NERF, 67 (afecta a consumidores)
-3. "Orden ministerial de actualización de formularios administrativos" → ACTUALIZACIÓN, 15 (cambio técnico)
+ESCALA DE RELEVANCIA (1-100) - SÉ MUY CONSERVADOR:
+- **95-100**: Reformas constitucionales, presupuestos generales del Estado, leyes orgánicas fundamentales
+  Ejemplo: "Ley Orgánica de reforma del Código Penal" → 97
+
+- **85-94**: Leyes nacionales importantes, reformas fiscales mayores, cambios en derechos fundamentales
+  Ejemplo: "Real Decreto-ley de subida del salario mínimo interprofesional" → 88
+
+- **70-84**: Cambios significativos en sectores importantes (sanidad, educación, empleo a nivel nacional)
+  Ejemplo: "Real Decreto de nuevas prestaciones por desempleo" → 76
+
+- **55-69**: Regulaciones sectoriales moderadas, afectan a sectores específicos pero amplios
+  Ejemplo: "Orden de nuevas ayudas para autónomos" → 62
+
+- **40-54**: Cambios administrativos con impacto limitado, regulaciones de nicho
+  Ejemplo: "Resolución de bases reguladoras de subvenciones para cooperativas agrarias" → 48
+
+- **25-39**: Convocatorias de empleo público, nombramientos importantes, correcciones menores
+  Ejemplo: "Convocatoria de 50 plazas de funcionarios del Ministerio X" → 32
+
+- **10-24**: Nombramientos individuales, correcciones de erratas, anuncios administrativos
+  Ejemplo: "Nombramiento de Director General de la Agencia X" → 18
+
+- **1-9**: Cambios puramente técnicos, correcciones tipográficas, anuncios sin impacto
+  Ejemplo: "Corrección de errores en la Orden de 15 de marzo" → 5
+
+EJEMPLOS CONCRETOS DE CLASIFICACIÓN ESTRICTA:
+
+1. "Convocatoria de 200 plazas de Policía Nacional"
+   → BUFF, relevancia: 35 (solo afecta a aspirantes, no a toda la población)
+
+2. "Modificación del convenio ICO para facilidades de financiación empresarial"
+   → BUFF, relevancia: 58 (ayuda a empresas pero es un convenio específico)
+
+3. "Admisión a trámite de recurso de inconstitucionalidad contra ley autonómica"
+   → ACTUALIZACIÓN, relevancia: 22 (es un trámite procesal, no un cambio normativo)
+
+4. "Nombramiento de Secretario General Técnico del Ministerio de Cultura"
+   → ACTUALIZACIÓN, relevancia: 12 (nombramiento individual sin impacto directo)
+
+5. "Real Decreto de aumento de pensiones mínimas en 50€/mes"
+   → BUFF, relevancia: 82 (afecta a millones de pensionistas)
+
+6. "Orden de exclusión de 3 deportistas de ayudas por dopaje"
+   → NERF, relevancia: 8 (afecta solo a 3 personas específicas)
 
 DOCUMENTOS A ANALIZAR:
 ${batchPrompts}
 
-INSTRUCCIONES:
-1. Analiza cada documento considerando su impacto real en la sociedad española
-2. Clasifica según los criterios establecidos
-3. Asigna relevancia basada en el número estimado de personas afectadas
-4. Crea un resumen conciso del impacto principal
+INSTRUCCIONES CRÍTICAS:
+1. SÉ EXTREMADAMENTE CONSERVADOR con las puntuaciones altas (90+)
+2. La MAYORÍA de documentos deberían ser ACTUALIZACIÓN (no buff/nerf)
+3. Solo clasifica como BUFF/NERF si hay impacto nacional real y medible
+4. Usa valores ESPECÍFICOS del 1-100 (no solo múltiplos de 10): 47, 63, 81, etc.
+5. Nombramientos, convocatorias locales, correcciones → ACTUALIZACIÓN
+6. Recursos, admisiones a trámite, anuncios → ACTUALIZACIÓN
+7. Si dudas entre buff/nerf y actualización → elige ACTUALIZACIÓN
 
-Responde ÚNICAMENTE con JSON válido:
+Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
 {
   "results": [
     {
       "id": "ID_del_documento",
       "tipo": "buff|nerf|actualización",
-      "summary": "Resumen del impacto en 1-2 líneas",
-      "relevance": número_entero_1_a_100
+      "summary": "Resumen conciso del impacto real",
+      "relevance": número_entero_específico_1_a_100
     }
   ]
 }`;
@@ -228,13 +271,20 @@ export async function classifyAndSaveToDatabase(fecha: string): Promise<void> {
     return;
   }
 
-  console.log(`📊 Procesando ${files.length} documentos...`);
+  // Aplicar límite de prueba si está configurado
+  const filesToProcess = TEST_MODE_LIMIT > 0 ? files.slice(0, TEST_MODE_LIMIT) : files;
+
+  if (TEST_MODE_LIMIT > 0) {
+    console.log(`⚠️  MODO DE PRUEBA: Limitando a ${TEST_MODE_LIMIT} documentos de ${files.length} totales`);
+  }
+
+  console.log(`📊 Procesando ${filesToProcess.length} documentos...`);
 
   // Leer todos los archivos JSON
   const promptData: PromptData[] = [];
   const originalData: { [key: string]: any } = {};
 
-  for (const file of files) {
+  for (const file of filesToProcess) {
     const filePath = path.join(jsonDir, file);
     try {
       const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
