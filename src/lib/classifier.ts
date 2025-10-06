@@ -28,9 +28,9 @@ function getGroqClient(): Groq {
 
 // Configuración optimizada para llama-3.3-70b-versatile
 const MODEL = 'llama-3.3-70b-versatile';
-const CHUNK_SIZE = 5; // Aumentado para aprovechar mejor el modelo más potente
-const PAUSE_MS = 1500; // Reducido ya que el modelo es más estable
-const MAX_CONTENT_LENGTH = 8000; // Aumentado para aprovechar la capacidad del modelo
+const CHUNK_SIZE = 3; // Reducido para evitar límites de tokens (12000 TPM)
+const PAUSE_MS = 2000; // Aumentado para evitar rate limits
+const MAX_CONTENT_LENGTH = 6000; // Reducido para evitar exceso de tokens
 
 // MODO DE PRUEBA: Limitar a 20 documentos para evitar rate limit durante pruebas
 // IMPORTANTE: Cambiar a 0 para procesar TODOS los documentos en producción
@@ -38,6 +38,21 @@ const TEST_MODE_LIMIT = 0; // 0 = sin límite, >0 = limitar a N documentos
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Función para estimar tokens (aproximación: 1 token ≈ 4 caracteres)
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+// Función para validar que el prompt no exceda el límite de tokens
+function validatePromptSize(prompt: string, maxTokens: number = 10000): boolean {
+  const estimatedTokens = estimateTokens(prompt);
+  if (estimatedTokens > maxTokens) {
+    console.log(`⚠️  Prompt demasiado grande: ${estimatedTokens} tokens (límite: ${maxTokens})`);
+    return false;
+  }
+  return true;
 }
 
 // Función para reintentar con diferentes claves en caso de rate limit
@@ -209,6 +224,59 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
 
     try {
       console.log(`🤖 Clasificando lote ${Math.floor(i/CHUNK_SIZE) + 1}/${Math.ceil(data.length/CHUNK_SIZE)} (${batch.length} items)...`);
+      
+      // Validar tamaño del prompt antes de enviar
+      if (!validatePromptSize(prompt, 10000)) {
+        console.log(`⚠️  Reduciendo lote de ${batch.length} a 2 items para evitar límite de tokens...`);
+        // Si el prompt es demasiado grande, procesar solo 2 items
+        const reducedBatch = batch.slice(0, 2);
+        const reducedPrompts = reducedBatch.map(item => 
+          `ID: ${item.id}\nTítulo: ${item.title}\nContenido: ${item.content.substring(0, MAX_CONTENT_LENGTH)}`
+        ).join('\n\n---\n\n');
+        
+        const reducedPrompt = prompt.replace(batchPrompts, reducedPrompts);
+        if (!validatePromptSize(reducedPrompt, 10000)) {
+          console.log(`❌ Error: Incluso con 2 items el prompt es demasiado grande. Saltando lote.`);
+          continue;
+        }
+        
+        // Usar el prompt reducido
+        const result = await retryWithDifferentKey(async (groq) => {
+          const res = await groq.chat.completions.create({
+            model: MODEL,
+            messages: [{ role: 'user', content: reducedPrompt }],
+            temperature: 0.1,
+            max_tokens: 4000,
+          });
+
+          const content = res.choices[0]?.message?.content;
+          if (!content) throw new Error('La IA no retornó contenido');
+
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) throw new Error('No se encontró JSON válido en la respuesta');
+
+          const payload = JSON.parse(jsonMatch[0]);
+          if (!payload.results || !Array.isArray(payload.results)) {
+            throw new Error('Formato de respuesta inválido');
+          }
+
+          return payload.results;
+        });
+        
+        // Procesar solo los resultados del lote reducido
+        for (const resultItem of result) {
+          const item = reducedBatch.find(b => b.id === resultItem.id);
+          if (item) {
+            results.push({
+              id: resultItem.id,
+              tipo: resultItem.tipo,
+              summary: resultItem.summary,
+              relevance: resultItem.relevance
+            });
+          }
+        }
+        continue;
+      }
       
       const result = await retryWithDifferentKey(async (groq) => {
         const res = await groq.chat.completions.create({

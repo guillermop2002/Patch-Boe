@@ -25,12 +25,27 @@ function getGroqClientHistorical(): Groq {
 
 // Configuración optimizada para llama-3.3-70b-versatile
 const MODEL = 'llama-3.3-70b-versatile';
-const CHUNK_SIZE = 5;
-const PAUSE_MS = 1500;
-const MAX_CONTENT_LENGTH = 8000;
+const CHUNK_SIZE = 3; // Reducido para evitar límites de tokens (12000 TPM)
+const PAUSE_MS = 2000; // Aumentado para evitar rate limits
+const MAX_CONTENT_LENGTH = 6000; // Reducido para evitar exceso de tokens
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Función para estimar tokens (aproximación: 1 token ≈ 4 caracteres)
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+// Función para validar que el prompt no exceda el límite de tokens
+function validatePromptSize(prompt: string, maxTokens: number = 10000): boolean {
+  const estimatedTokens = estimateTokens(prompt);
+  if (estimatedTokens > maxTokens) {
+    console.log(`⚠️  Prompt demasiado grande: ${estimatedTokens} tokens (límite: ${maxTokens})`);
+    return false;
+  }
+  return true;
 }
 
 // Función para reintentar con diferentes claves en caso de rate limit
