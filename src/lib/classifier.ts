@@ -110,9 +110,9 @@ async function classifyItems(data: PromptData[]): Promise<ClassificationResult[]
     }).join('\n\n---\n\n');
 
     const prompt = `
-Eres un analista legislativo CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
+Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
 
-⚠️ IMPORTANTE: Sé ESTRICTO pero EQUILIBRADO. La mayoría de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto nacional o sectorial significativo.
+⚠️ CRÍTICO: Sé ESTRICTO pero EQUILIBRADO. El 80% de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto sectorial o nacional.
 
 CRITERIOS DE CLASIFICACIÓN:
 - **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos (con relevancia nacional o sectorial significativa)
@@ -144,15 +144,15 @@ ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 
 - **25-39**: Convocatorias de empleo público, nombramientos importantes, correcciones menores
   Ejemplo: "Convocatoria de 50 plazas de funcionarios del Ministerio X" → 32
-  ⚠️ ~20% de documentos pueden estar aquí
+  ⚠️ ~15% de documentos pueden estar aquí
 
 - **10-24**: Nombramientos individuales, correcciones de erratas, anuncios administrativos
   Ejemplo: "Nombramiento de Director General de la Agencia X" → 18
-  ⚠️ ~30% de documentos pueden estar aquí
+  ⚠️ ~20% de documentos pueden estar aquí
 
 - **1-9**: Cambios puramente técnicos, correcciones tipográficas, anuncios sin impacto
   Ejemplo: "Corrección de errores en la Orden de 15 de marzo" → 5
-  ⚠️ ~17% de documentos pueden estar aquí
+  ⚠️ ~15% de documentos pueden estar aquí
 
 EJEMPLOS CONCRETOS DE CLASIFICACIÓN EQUILIBRADA:
 
@@ -185,7 +185,7 @@ ${batchPrompts}
 
 INSTRUCCIONES EQUILIBRADAS:
 1. Sé CONSERVADOR pero no extremo con las puntuaciones altas (70+)
-2. El 60% de documentos deberían ser ACTUALIZACIÓN, 40% BUFF/NERF
+2. El 80% de documentos deberían ser ACTUALIZACIÓN, 20% BUFF/NERF
 3. Clasifica como BUFF/NERF si hay impacto sectorial significativo o nacional
 4. USA VALORES ÚNICOS Y VARIADOS del 1-100: 23, 37, 41, 46, 52, 59, 64, 71, etc.
 5. EVITA PUNTUACIONES REPETIDAS: Si ya usaste 45, usa 43, 47, 49, 51, etc.
