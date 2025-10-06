@@ -231,7 +231,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
         // Si el prompt es demasiado grande, procesar solo 2 items
         const reducedBatch = batch.slice(0, 2);
         const reducedPrompts = reducedBatch.map(item => 
-          `ID: ${item.id}\nTítulo: ${item.title}\nContenido: ${item.content.substring(0, MAX_CONTENT_LENGTH)}`
+          `ID: ${item.id}\nTítulo: ${(item as any).title}\nContenido: ${(item as any).content.substring(0, MAX_CONTENT_LENGTH)}`
         ).join('\n\n---\n\n');
         
         const reducedPrompt = prompt.replace(batchPrompts, reducedPrompts);
@@ -267,7 +267,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
         for (const resultItem of result) {
           const item = reducedBatch.find(b => b.id === resultItem.id);
           if (item) {
-            results.push({
+            (results as any).push({
               id: resultItem.id,
               tipo: resultItem.tipo,
               summary: resultItem.summary,
