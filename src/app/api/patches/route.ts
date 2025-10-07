@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     const meses = searchParams.get('meses')
     const años = searchParams.get('años')
     const tipoFiltro = searchParams.get('tipoFiltro')
+    const categorias = searchParams.get('categorias')
+    const subtipos = searchParams.get('subtipos')
     const action = searchParams.get('action')
 
     const db = getDatabase()
@@ -18,6 +20,18 @@ export async function GET(request: NextRequest) {
     if (action === 'fechas-disponibles') {
       const fechas = db.getAvailableDates()
       return NextResponse.json({ fechas })
+    }
+
+    // Obtener categorías disponibles
+    if (action === 'categorias-disponibles') {
+      const categorias = db.getAvailableCategories()
+      return NextResponse.json({ categorias })
+    }
+
+    // Obtener subtipos disponibles
+    if (action === 'subtipos-disponibles') {
+      const subtipos = db.getAvailableSubtypes()
+      return NextResponse.json({ subtipos })
     }
 
     // Búsqueda avanzada
@@ -36,6 +50,12 @@ export async function GET(request: NextRequest) {
       }
       if (años) {
         criterios.años = años.split(',')
+      }
+      if (categorias) {
+        criterios.categorias = categorias.split(',')
+      }
+      if (subtipos) {
+        criterios.subtipos = subtipos.split(',')
       }
 
       let patches = db.buscarPatches(criterios)

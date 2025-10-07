@@ -218,6 +218,20 @@ class PatchDatabase {
       whereConditions.push(`(${fechaConditions.join(' OR ')})`);
     }
 
+    // Categorías
+    if (criterios.categorias && criterios.categorias.length > 0) {
+      const categoriaConditions = criterios.categorias.map(() => 'categoria = ?').join(' OR ');
+      whereConditions.push(`(${categoriaConditions})`);
+      params.push(...criterios.categorias);
+    }
+
+    // Subtipos
+    if (criterios.subtipos && criterios.subtipos.length > 0) {
+      const subtipoConditions = criterios.subtipos.map(() => 'subtipo = ?').join(' OR ');
+      whereConditions.push(`(${subtipoConditions})`);
+      params.push(...criterios.subtipos);
+    }
+
     // Construir query final
     let query = 'SELECT * FROM patches';
     if (whereConditions.length > 0) {
@@ -227,6 +241,31 @@ class PatchDatabase {
 
     const stmt = this.db.prepare(query);
     return stmt.all(...params) as PatchEntry[];
+  }
+
+  // Obtener categorías disponibles
+  getAvailableCategories(): string[] {
+    const stmt = this.db.prepare('SELECT DISTINCT categoria FROM patches ORDER BY categoria');
+    const result = stmt.all() as { categoria: string }[];
+    return result.map(r => r.categoria);
+  }
+
+  // Obtener subtipos disponibles
+  getAvailableSubtypes(): { [categoria: string]: string[] } {
+    const stmt = this.db.prepare('SELECT DISTINCT categoria, subtipo FROM patches ORDER BY categoria, subtipo');
+    const result = stmt.all() as { categoria: string, subtipo: string }[];
+    
+    const subtipos: { [categoria: string]: string[] } = {};
+    result.forEach(row => {
+      if (!subtipos[row.categoria]) {
+        subtipos[row.categoria] = [];
+      }
+      if (!subtipos[row.categoria].includes(row.subtipo)) {
+        subtipos[row.categoria].push(row.subtipo);
+      }
+    });
+    
+    return subtipos;
   }
 
   // Limpiar datos de una fecha específica
