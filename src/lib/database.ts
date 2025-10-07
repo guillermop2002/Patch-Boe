@@ -8,6 +8,8 @@ export interface PatchEntry {
   fecha: string;
   titulo: string;
   tipo: 'buff' | 'nerf';
+  categoria: string;
+  subtipo: string;
   summary: string;
   relevance: number;
   contenido: string;
@@ -37,6 +39,8 @@ class PatchDatabase {
         fecha TEXT NOT NULL,
         titulo TEXT NOT NULL,
         tipo TEXT NOT NULL CHECK (tipo IN ('buff', 'nerf')),
+        categoria TEXT NOT NULL,
+        subtipo TEXT NOT NULL,
         summary TEXT NOT NULL,
         relevance INTEGER NOT NULL CHECK (relevance >= 1 AND relevance <= 100),
         contenido TEXT NOT NULL,
@@ -49,6 +53,8 @@ class PatchDatabase {
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_fecha ON patches(fecha);
       CREATE INDEX IF NOT EXISTS idx_tipo ON patches(tipo);
+      CREATE INDEX IF NOT EXISTS idx_categoria ON patches(categoria);
+      CREATE INDEX IF NOT EXISTS idx_subtipo ON patches(subtipo);
       CREATE INDEX IF NOT EXISTS idx_relevance ON patches(relevance);
       CREATE INDEX IF NOT EXISTS idx_fecha_tipo ON patches(fecha, tipo);
     `);
@@ -58,8 +64,8 @@ class PatchDatabase {
   insertPatch(patch: Omit<PatchEntry, 'created_at'>): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO patches 
-      (id, fecha, titulo, tipo, summary, relevance, contenido, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (id, fecha, titulo, tipo, categoria, subtipo, summary, relevance, contenido, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -67,6 +73,8 @@ class PatchDatabase {
       patch.fecha,
       patch.titulo,
       patch.tipo,
+      patch.categoria,
+      patch.subtipo,
       patch.summary,
       patch.relevance,
       patch.contenido,
@@ -78,8 +86,8 @@ class PatchDatabase {
   insertPatches(patches: Omit<PatchEntry, 'created_at'>[]): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO patches 
-      (id, fecha, titulo, tipo, summary, relevance, contenido, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (id, fecha, titulo, tipo, categoria, subtipo, summary, relevance, contenido, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertMany = this.db.transaction((patches: Omit<PatchEntry, 'created_at'>[]) => {
@@ -90,6 +98,8 @@ class PatchDatabase {
           patch.fecha,
           patch.titulo,
           patch.tipo,
+          patch.categoria,
+          patch.subtipo,
           patch.summary,
           patch.relevance,
           patch.contenido,

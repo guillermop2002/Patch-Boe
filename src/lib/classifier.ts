@@ -83,6 +83,8 @@ async function retryWithDifferentKey<T>(
 interface ClassificationResult {
   id: string;
   tipo: 'buff' | 'nerf' | 'actualización';
+  categoria: string;
+  subtipo: string;
   summary: string;
   relevance: number;
 }
@@ -97,6 +99,10 @@ function validateClassification(result: any): result is ClassificationResult {
   
   return (
     validTypes.includes(result.tipo) &&
+    typeof result.categoria === 'string' &&
+    result.categoria.length > 0 &&
+    typeof result.subtipo === 'string' &&
+    result.subtipo.length > 0 &&
     typeof result.summary === 'string' &&
     result.summary.length > 0 &&
     Number.isInteger(result.relevance) &&
@@ -125,7 +131,7 @@ async function classifyItems(data: PromptData[]): Promise<ClassificationResult[]
     }).join('\n\n---\n\n');
 
     const prompt = `
-Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
+Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL y CATEGORIZA cada documento según el tipo de publicación del BOE.
 
 ⚠️ CRÍTICO: Sé ESTRICTO pero EQUILIBRADO. El 80% de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto sectorial o nacional.
 
@@ -135,6 +141,81 @@ CRITERIOS DE CLASIFICACIÓN:
 - **ACTUALIZACIÓN**: Cambios técnicos, administrativos, nombramientos, convocatorias locales, correcciones, etc.
 
 🔴 REGLA EQUILIBRADA: Si un documento tiene impacto sectorial significativo o afecta a grupos amplios, puede ser BUFF/NERF. Solo ACTUALIZACIÓN si es puramente administrativo.
+
+📋 CATEGORÍAS DEL BOE (clasifica cada documento en UNA categoría y subtipo):
+
+1. **Normas y disposiciones generales**
+   Subtipos: Ley, ProyectoLey, Anteproyecto, RealDecretoLey, RealDecreto, Decreto, OrdenMinisterial, Reglamento, Ordenanza
+   Ejemplos: Ley de presupuestos, Real Decreto regulatorio, Orden ministerial
+
+2. **Disposiciones administrativas / actos generales**
+   Subtipos: Circular, Instruccion, ResolucionGeneral, Acuerdo, NotaInformativa
+   Ejemplos: Circulares de la administración, instrucciones internas
+
+3. **Actos individuales / resoluciones**
+   Subtipos: Nombramiento, Cese, ConcesionIndividual, SancionIndividual, ResolucionAdministrativa
+   Ejemplos: nombramientos de personal, resoluciones de subvención individual
+
+4. **Anuncios, edictos y notificaciones públicas**
+   Subtipos: Edicto, Notificacion, AnuncioRegistroCivil, AnuncioJudicial, Subasta
+   Ejemplos: edictos de subastas, notificaciones a desconocidos
+
+5. **Contratación pública y compras**
+   Subtipos: ConvocatoriaLicitacion, Pliego, Adjudicacion, Contratos, Suministros
+   Ejemplos: anuncios de concursos públicos, adjudicaciones de contratos
+
+6. **Convocatorias y empleo público**
+   Subtipos: ConvocatoriaOposicion, BasesSelectivas, ResultadosSeleccion, ListasReservas
+   Ejemplos: oferta de empleo público, listas definitivas de aprobados
+
+7. **Subvenciones, ayudas y prestaciones**
+   Subtipos: ConvocatoriaAyuda, BasesSubvencion, ResolucionConcesion, Reintegro
+   Ejemplos: convocatorias de ayudas, resoluciones de concesión
+
+8. **Fiscalidad, presupuestos y cuentas públicas**
+   Subtipos: Presupuestos, ModificacionPresupuestaria, OrdenTasas, CircularFiscal
+   Ejemplos: cuentas generales, modificaciones presupuestarias
+
+9. **Registros oficiales y mercantiles / Propiedad**
+   Subtipos: RegistroMercantil, RegistroPropiedad, InscripcionPatente, Marca
+   Ejemplos: asientos registrales, publicaciones de constitución de sociedades
+
+10. **Jurisprudencia y actos de los órganos jurisdiccionales**
+    Subtipos: Sentencia, Auto, Providencia, ComunicadoTribunal
+    Ejemplos: resoluciones publicadas por tribunales
+
+11. **Normativa y actos internacionales / UE**
+    Subtipos: DirectivaUE, ReglamentoUE, Tratado, AcuerdoInternacional, DecisionComunitaria
+    Ejemplos: trasposición de directivas, publicación de tratados
+
+12. **Correcciones, rectificaciones y notas aclaratorias**
+    Subtipos: CorreccionErrores, Rectificacion, Aclaracion
+    Ejemplos: corrección de erratas en normas o anuncios previos
+
+13. **Informes, estudios y estadísticas oficiales**
+    Subtipos: InformeTecnico, Memoria, EstadisticaOficial, Dictamen
+    Ejemplos: informes de ministerios, memorias de actividad
+
+14. **Transparencia, control y fiscalización**
+    Subtipos: CuentaAnual, InformeAuditoria, DeclaracionPatrimonial, AcuerdoPleno
+    Ejemplos: cuentas de organismos, informes de interventoría
+
+15. **Asuntos mercantiles y de procedimientos concursales**
+    Subtipos: ConcursoAcreedores, NombramientoAdministradorConcursal, AnuncioConcursal
+
+16. **Comunicados institucionales y actos protocolarios**
+    Subtipos: DeclaracionInstitucional, ProtocoloVisita, NombramientoHonorifico
+
+17. **Publicidad legal y comerciales obligatorias**
+    Subtipos: AvisoLegal, PublicacionConvocatoriaSociedad, LiquidacionSocietaria
+
+18. **Medidas urgentes y de emergencia**
+    Subtipos: EstadoAlarma, EstadoExcepcion, MedidaEmergencia, SuspensionTemporal
+    Ejemplos: decretos emergencia sanitaria, medidas extraordinarias
+
+19. **Otros / Varios**
+    Subtipos: Misc, InformacionSectorial, BoletinInterno
+    Uso: para publicaciones atípicas que no encajen en las anteriores
 
 ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 - **95-100**: Reformas constitucionales, presupuestos generales del Estado, leyes orgánicas fundamentales
@@ -216,6 +297,8 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
     {
       "id": "ID_del_documento",
       "tipo": "buff|nerf|actualización",
+      "categoria": "nombre_categoria_principal",
+      "subtipo": "subtipo_especifico",
       "summary": "Resumen conciso del impacto real",
       "relevance": número_entero_específico_1_a_100
     }
@@ -270,6 +353,8 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
             (results as any).push({
               id: resultItem.id,
               tipo: resultItem.tipo,
+              categoria: resultItem.categoria,
+              subtipo: resultItem.subtipo,
               summary: resultItem.summary,
               relevance: resultItem.relevance
             });
@@ -312,7 +397,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
       // Mostrar progreso
       validResults.forEach((r: ClassificationResult) => {
         const emoji = r.tipo === 'buff' ? '🔼' : r.tipo === 'nerf' ? '🔽' : '⚙️';
-        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100): ${r.summary.substring(0, 80)}...`);
+        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100) [${r.categoria}/${r.subtipo}]: ${r.summary.substring(0, 80)}...`);
       });
       
     } catch (e: any) {
@@ -405,6 +490,8 @@ export async function classifyAndSaveToDatabase(fecha: string): Promise<void> {
           fecha: fecha,
           titulo: originalDoc.TITULO,
           tipo: classification.tipo,
+          categoria: classification.categoria,
+          subtipo: classification.subtipo,
           summary: classification.summary,
           relevance: classification.relevance,
           contenido: originalDoc.CONTENIDO

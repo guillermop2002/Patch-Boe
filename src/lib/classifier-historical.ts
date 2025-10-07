@@ -76,6 +76,8 @@ async function retryWithDifferentKeyHistorical<T>(
 interface ClassificationResult {
   id: string;
   tipo: 'buff' | 'nerf' | 'actualización';
+  categoria: string;
+  subtipo: string;
   summary: string;
   relevance: number;
 }
