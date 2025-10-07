@@ -350,7 +350,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
         for (const resultItem of result) {
           const item = reducedBatch.find(b => b.id === resultItem.id);
           if (item) {
-            (results as any).push({
+            all.push({
               id: resultItem.id,
               tipo: resultItem.tipo,
               categoria: resultItem.categoria,
