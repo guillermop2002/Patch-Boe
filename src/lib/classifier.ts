@@ -84,13 +84,34 @@ interface ClassificationResult {
   id: string;
   tipo: 'buff' | 'nerf' | 'actualización';
   categoria: string;
-  subtipo: string;
   summary: string;
   relevance: number;
 }
 
 function validateClassification(result: any): result is ClassificationResult {
   const validTypes = ['buff','nerf','actualización'];
+  const validCategorias = [
+    'NormasYDisposiciones',
+    'DisposicionesAdministrativas',
+    'ActosIndividuales',
+    'AnunciosEdictosNotificaciones',
+    'ContratacionPublica',
+    'ConvocatoriasEmpleoPublico',
+    'SubvencionesAyudas',
+    'FiscalidadPresupuestos',
+    'RegistrosPropiedadMercantil',
+    'Jurisprudencia',
+    'NormativaInternacionalUE',
+    'CorreccionesRectificaciones',
+    'InformesEstadisticas',
+    'TransparenciaFiscalizacion',
+    'ConcursosYProcedimientos',
+    'SectorialesTecnicos',
+    'ComunicadosInstitucionales',
+    'PublicidadLegal',
+    'MedidasEmergencia',
+    'Otros'
+  ];
   
   // Normalizar tipo a minúsculas
   if (result.tipo) {
@@ -100,13 +121,11 @@ function validateClassification(result: any): result is ClassificationResult {
   return (
     validTypes.includes(result.tipo) &&
     typeof result.categoria === 'string' &&
-    result.categoria.length > 0 &&
-    typeof result.subtipo === 'string' &&
-    result.subtipo.length > 0 &&
+    validCategorias.includes(result.categoria) &&
     typeof result.summary === 'string' &&
     result.summary.length > 0 &&
     Number.isInteger(result.relevance) &&
-    result.relevance >= 1 && 
+    result.relevance >= 1 &&
     result.relevance <= 100
   );
 }
@@ -131,7 +150,7 @@ async function classifyItems(data: PromptData[]): Promise<ClassificationResult[]
     }).join('\n\n---\n\n');
 
     const prompt = `
-Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL y CATEGORIZA cada documento según el tipo de publicación del BOE.
+Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.
 
 ⚠️ CRÍTICO: Sé ESTRICTO pero EQUILIBRADO. El 80% de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto sectorial o nacional.
 
@@ -142,80 +161,28 @@ CRITERIOS DE CLASIFICACIÓN:
 
 🔴 REGLA EQUILIBRADA: Si un documento tiene impacto sectorial significativo o afecta a grupos amplios, puede ser BUFF/NERF. Solo ACTUALIZACIÓN si es puramente administrativo.
 
-📋 CATEGORÍAS DEL BOE (clasifica cada documento en UNA categoría y subtipo):
+📋 CATEGORÍAS DEL BOE (clasifica cada documento en UNA categoría exacta):
 
-1. **Normas y disposiciones generales**
-   Subtipos: Ley, ProyectoLey, Anteproyecto, RealDecretoLey, RealDecreto, Decreto, OrdenMinisterial, Reglamento, Ordenanza
-   Ejemplos: Ley de presupuestos, Real Decreto regulatorio, Orden ministerial
-
-2. **Disposiciones administrativas / actos generales**
-   Subtipos: Circular, Instruccion, ResolucionGeneral, Acuerdo, NotaInformativa
-   Ejemplos: Circulares de la administración, instrucciones internas
-
-3. **Actos individuales / resoluciones**
-   Subtipos: Nombramiento, Cese, ConcesionIndividual, SancionIndividual, ResolucionAdministrativa
-   Ejemplos: nombramientos de personal, resoluciones de subvención individual
-
-4. **Anuncios, edictos y notificaciones públicas**
-   Subtipos: Edicto, Notificacion, AnuncioRegistroCivil, AnuncioJudicial, Subasta
-   Ejemplos: edictos de subastas, notificaciones a desconocidos
-
-5. **Contratación pública y compras**
-   Subtipos: ConvocatoriaLicitacion, Pliego, Adjudicacion, Contratos, Suministros
-   Ejemplos: anuncios de concursos públicos, adjudicaciones de contratos
-
-6. **Convocatorias y empleo público**
-   Subtipos: ConvocatoriaOposicion, BasesSelectivas, ResultadosSeleccion, ListasReservas
-   Ejemplos: oferta de empleo público, listas definitivas de aprobados
-
-7. **Subvenciones, ayudas y prestaciones**
-   Subtipos: ConvocatoriaAyuda, BasesSubvencion, ResolucionConcesion, Reintegro
-   Ejemplos: convocatorias de ayudas, resoluciones de concesión
-
-8. **Fiscalidad, presupuestos y cuentas públicas**
-   Subtipos: Presupuestos, ModificacionPresupuestaria, OrdenTasas, CircularFiscal
-   Ejemplos: cuentas generales, modificaciones presupuestarias
-
-9. **Registros oficiales y mercantiles / Propiedad**
-   Subtipos: RegistroMercantil, RegistroPropiedad, InscripcionPatente, Marca
-   Ejemplos: asientos registrales, publicaciones de constitución de sociedades
-
-10. **Jurisprudencia y actos de los órganos jurisdiccionales**
-    Subtipos: Sentencia, Auto, Providencia, ComunicadoTribunal
-    Ejemplos: resoluciones publicadas por tribunales
-
-11. **Normativa y actos internacionales / UE**
-    Subtipos: DirectivaUE, ReglamentoUE, Tratado, AcuerdoInternacional, DecisionComunitaria
-    Ejemplos: trasposición de directivas, publicación de tratados
-
-12. **Correcciones, rectificaciones y notas aclaratorias**
-    Subtipos: CorreccionErrores, Rectificacion, Aclaracion
-    Ejemplos: corrección de erratas en normas o anuncios previos
-
-13. **Informes, estudios y estadísticas oficiales**
-    Subtipos: InformeTecnico, Memoria, EstadisticaOficial, Dictamen
-    Ejemplos: informes de ministerios, memorias de actividad
-
-14. **Transparencia, control y fiscalización**
-    Subtipos: CuentaAnual, InformeAuditoria, DeclaracionPatrimonial, AcuerdoPleno
-    Ejemplos: cuentas de organismos, informes de interventoría
-
-15. **Asuntos mercantiles y de procedimientos concursales**
-    Subtipos: ConcursoAcreedores, NombramientoAdministradorConcursal, AnuncioConcursal
-
-16. **Comunicados institucionales y actos protocolarios**
-    Subtipos: DeclaracionInstitucional, ProtocoloVisita, NombramientoHonorifico
-
-17. **Publicidad legal y comerciales obligatorias**
-    Subtipos: AvisoLegal, PublicacionConvocatoriaSociedad, LiquidacionSocietaria
-
-18. **Medidas urgentes y de emergencia**
-    Subtipos: EstadoAlarma, EstadoExcepcion, MedidaEmergencia, SuspensionTemporal
-    Ejemplos: decretos emergencia sanitaria, medidas extraordinarias
-
-19. **Otros / Varios**
-    Subtipos: Misc, InformacionSectorial, BoletinInterno
-    Uso: para publicaciones atípicas que no encajen en las anteriores
+1. **NormasYDisposiciones**: Leyes, decretos, órdenes ministeriales, reglamentos
+2. **DisposicionesAdministrativas**: Circulares, instrucciones, resoluciones generales
+3. **ActosIndividuales**: Nombramientos, resoluciones individuales, decisiones específicas
+4. **AnunciosEdictosNotificaciones**: Edictos, notificaciones públicas, anuncios registrales
+5. **ContratacionPublica**: Concursos públicos, adjudicaciones, contratos administrativos
+6. **ConvocatoriasEmpleoPublico**: Ofertas de empleo público, listas de aprobados
+7. **SubvencionesAyudas**: Convocatorias de ayudas, resoluciones de concesión
+8. **FiscalidadPresupuestos**: Cuentas públicas, modificaciones presupuestarias, instrucciones tributarias
+9. **RegistrosPropiedadMercantil**: Asientos registrales, constitución de sociedades, marcas
+10. **Jurisprudencia**: Resoluciones de tribunales, sentencias de interés general
+11. **NormativaInternacionalUE**: Trasposición de directivas, tratados internacionales
+12. **CorreccionesRectificaciones**: Corrección de erratas, rectificaciones de normas
+13. **InformesEstadisticas**: Informes oficiales, memorias, estadísticas públicas
+14. **TransparenciaFiscalizacion**: Cuentas de organismos, informes de control
+15. **ConcursosYProcedimientos**: Concursos de acreedores, procedimientos concursales
+16. **SectorialesTecnicos**: Regulaciones técnicas, normas sectoriales específicas
+17. **ComunicadosInstitucionales**: Declaraciones institucionales, actos protocolarios
+18. **PublicidadLegal**: Avisos legales, publicaciones obligatorias
+19. **MedidasEmergencia**: Decretos de emergencia, medidas extraordinarias
+20. **Otros**: Publicaciones atípicas que no encajen en las anteriores
 
 ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 - **95-100**: Reformas constitucionales, presupuestos generales del Estado, leyes orgánicas fundamentales
@@ -253,28 +220,28 @@ ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 EJEMPLOS CONCRETOS DE CLASIFICACIÓN EQUILIBRADA:
 
 1. "Convocatoria de 200 plazas de Policía Nacional"
-   → BUFF, relevancia: 35 (afecta a aspirantes y mejora seguridad)
+   → BUFF, ConvocatoriasEmpleoPublico, relevancia: 35 (afecta a aspirantes y mejora seguridad)
 
 2. "Modificación del convenio ICO para facilidades de financiación empresarial"
-   → BUFF, relevancia: 52 (ayuda a empresas, sectorial importante)
+   → BUFF, SubvencionesAyudas, relevancia: 52 (ayuda a empresas, sectorial importante)
 
 3. "Admisión a trámite de recurso de inconstitucionalidad contra ley autonómica"
-   → ACTUALIZACIÓN, relevancia: 18 (es un trámite procesal)
+   → ACTUALIZACIÓN, Jurisprudencia, relevancia: 18 (es un trámite procesal)
 
 4. "Nombramiento de Secretario General Técnico del Ministerio de Cultura"
-   → ACTUALIZACIÓN, relevancia: 12 (nombramiento individual)
+   → ACTUALIZACIÓN, ActosIndividuales, relevancia: 12 (nombramiento individual)
 
 5. "Real Decreto de aumento de pensiones mínimas en 50€/mes"
-   → BUFF, relevancia: 75 (afecta a millones de pensionistas)
+   → BUFF, NormasYDisposiciones, relevancia: 75 (afecta a millones de pensionistas)
 
 6. "Orden de exclusión de 3 deportistas de ayudas por dopaje"
-   → NERF, relevancia: 8 (afecta solo a 3 personas específicas)
+   → NERF, SubvencionesAyudas, relevancia: 8 (afecta solo a 3 personas específicas)
 
 7. "Real Decreto de nuevas medidas de apoyo a la industria automotriz"
-   → BUFF, relevancia: 58 (sectorial importante)
+   → BUFF, SectorialesTecnicos, relevancia: 58 (sectorial importante)
 
 8. "Convocatoria de ayudas para jóvenes agricultores"
-   → BUFF, relevancia: 42 (sectorial moderado)
+   → BUFF, SubvencionesAyudas, relevancia: 42 (sectorial moderado)
 
 DOCUMENTOS A ANALIZAR:
 ${batchPrompts}
@@ -297,8 +264,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
     {
       "id": "ID_del_documento",
       "tipo": "buff|nerf|actualización",
-      "categoria": "nombre_categoria_principal",
-      "subtipo": "subtipo_especifico",
+      "categoria": "categoria_exacta_de_la_lista",
       "summary": "Resumen conciso del impacto real",
       "relevance": número_entero_específico_1_a_100
     }
@@ -350,11 +316,10 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
         for (const resultItem of result) {
           const item = reducedBatch.find(b => b.id === resultItem.id);
           if (item) {
-            all.push({
+            (results as any).push({
               id: resultItem.id,
               tipo: resultItem.tipo,
               categoria: resultItem.categoria,
-              subtipo: resultItem.subtipo,
               summary: resultItem.summary,
               relevance: resultItem.relevance
             });
@@ -397,7 +362,7 @@ Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
       // Mostrar progreso
       validResults.forEach((r: ClassificationResult) => {
         const emoji = r.tipo === 'buff' ? '🔼' : r.tipo === 'nerf' ? '🔽' : '⚙️';
-        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100) [${r.categoria}/${r.subtipo}]: ${r.summary.substring(0, 80)}...`);
+        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100) [${r.categoria}]: ${r.summary.substring(0, 80)}...`);
       });
       
     } catch (e: any) {
@@ -491,7 +456,6 @@ export async function classifyAndSaveToDatabase(fecha: string): Promise<void> {
           titulo: originalDoc.TITULO,
           tipo: classification.tipo,
           categoria: classification.categoria,
-          subtipo: classification.subtipo,
           summary: classification.summary,
           relevance: classification.relevance,
           contenido: originalDoc.CONTENIDO

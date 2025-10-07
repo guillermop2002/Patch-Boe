@@ -9,7 +9,6 @@ export interface PatchEntry {
   titulo: string;
   tipo: 'buff' | 'nerf';
   categoria: string;
-  subtipo: string;
   summary: string;
   relevance: number;
   contenido: string;
@@ -40,7 +39,6 @@ class PatchDatabase {
         titulo TEXT NOT NULL,
         tipo TEXT NOT NULL CHECK (tipo IN ('buff', 'nerf')),
         categoria TEXT NOT NULL,
-        subtipo TEXT NOT NULL,
         summary TEXT NOT NULL,
         relevance INTEGER NOT NULL CHECK (relevance >= 1 AND relevance <= 100),
         contenido TEXT NOT NULL,
@@ -49,14 +47,21 @@ class PatchDatabase {
       )
     `);
 
+    // Añadir columna categoria si no existe (para bases de datos existentes)
+    try {
+      this.db.exec(`ALTER TABLE patches ADD COLUMN categoria TEXT;`);
+    } catch (e) {
+      // La columna ya existe, ignorar error
+    }
+
     // Crear índices para optimizar consultas
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_fecha ON patches(fecha);
       CREATE INDEX IF NOT EXISTS idx_tipo ON patches(tipo);
       CREATE INDEX IF NOT EXISTS idx_categoria ON patches(categoria);
-      CREATE INDEX IF NOT EXISTS idx_subtipo ON patches(subtipo);
       CREATE INDEX IF NOT EXISTS idx_relevance ON patches(relevance);
       CREATE INDEX IF NOT EXISTS idx_fecha_tipo ON patches(fecha, tipo);
+      CREATE INDEX IF NOT EXISTS idx_fecha_categoria ON patches(fecha, categoria);
     `);
   }
 
@@ -64,8 +69,8 @@ class PatchDatabase {
   insertPatch(patch: Omit<PatchEntry, 'created_at'>): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO patches 
-      (id, fecha, titulo, tipo, categoria, subtipo, summary, relevance, contenido, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, fecha, titulo, tipo, categoria, summary, relevance, contenido, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -74,7 +79,6 @@ class PatchDatabase {
       patch.titulo,
       patch.tipo,
       patch.categoria,
-      patch.subtipo,
       patch.summary,
       patch.relevance,
       patch.contenido,
@@ -86,8 +90,8 @@ class PatchDatabase {
   insertPatches(patches: Omit<PatchEntry, 'created_at'>[]): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO patches 
-      (id, fecha, titulo, tipo, categoria, subtipo, summary, relevance, contenido, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, fecha, titulo, tipo, categoria, summary, relevance, contenido, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertMany = this.db.transaction((patches: Omit<PatchEntry, 'created_at'>[]) => {
@@ -99,7 +103,6 @@ class PatchDatabase {
           patch.titulo,
           patch.tipo,
           patch.categoria,
-          patch.subtipo,
           patch.summary,
           patch.relevance,
           patch.contenido,
@@ -218,20 +221,6 @@ class PatchDatabase {
       whereConditions.push(`(${fechaConditions.join(' OR ')})`);
     }
 
-    // Categorías
-    if (criterios.categorias && criterios.categorias.length > 0) {
-      const categoriaConditions = criterios.categorias.map(() => 'categoria = ?').join(' OR ');
-      whereConditions.push(`(${categoriaConditions})`);
-      params.push(...criterios.categorias);
-    }
-
-    // Subtipos
-    if (criterios.subtipos && criterios.subtipos.length > 0) {
-      const subtipoConditions = criterios.subtipos.map(() => 'subtipo = ?').join(' OR ');
-      whereConditions.push(`(${subtipoConditions})`);
-      params.push(...criterios.subtipos);
-    }
-
     // Construir query final
     let query = 'SELECT * FROM patches';
     if (whereConditions.length > 0) {
@@ -241,31 +230,6 @@ class PatchDatabase {
 
     const stmt = this.db.prepare(query);
     return stmt.all(...params) as PatchEntry[];
-  }
-
-  // Obtener categorías disponibles
-  getAvailableCategories(): string[] {
-    const stmt = this.db.prepare('SELECT DISTINCT categoria FROM patches ORDER BY categoria');
-    const result = stmt.all() as { categoria: string }[];
-    return result.map(r => r.categoria);
-  }
-
-  // Obtener subtipos disponibles
-  getAvailableSubtypes(): { [categoria: string]: string[] } {
-    const stmt = this.db.prepare('SELECT DISTINCT categoria, subtipo FROM patches ORDER BY categoria, subtipo');
-    const result = stmt.all() as { categoria: string, subtipo: string }[];
-    
-    const subtipos: { [categoria: string]: string[] } = {};
-    result.forEach(row => {
-      if (!subtipos[row.categoria]) {
-        subtipos[row.categoria] = [];
-      }
-      if (!subtipos[row.categoria].includes(row.subtipo)) {
-        subtipos[row.categoria].push(row.subtipo);
-      }
-    });
-    
-    return subtipos;
   }
 
   // Limpiar datos de una fecha específica
