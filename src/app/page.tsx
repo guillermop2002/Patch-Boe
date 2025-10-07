@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import React, { useState, useEffect } from 'react'
-import { PatchEntry, getPatchesByFecha, getFechasDisponibles, getCategoriasDisponibles, getSubtiposDisponibles, buscarPatches } from '@/lib/api-client'
+import { PatchEntry, getPatchesByFecha, getFechasDisponibles, buscarPatches } from '@/lib/api-client'
 import { getFechaHoy, formatearFecha } from '@/lib/fechas'
 import BuscadorAvanzado, { CriteriosBusqueda } from '@/components/BuscadorAvanzado'
 
@@ -9,8 +9,6 @@ export default function Home() {
   const [patchesHoy, setPatchesHoy] = useState<PatchEntry[]>([])
   const [patchesBusqueda, setPatchesBusqueda] = useState<PatchEntry[]>([])
   const [fechasDisponibles, setFechasDisponibles] = useState<string[]>([])
-  const [categoriasDisponibles, setCategoriasDisponibles] = useState<string[]>([])
-  const [subtiposDisponibles, setSubtiposDisponibles] = useState<{ [categoria: string]: string[] }>({})
   const [mostrandoBusqueda, setMostrandoBusqueda] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -31,13 +29,6 @@ export default function Home() {
       const fechas = await getFechasDisponibles()
       setFechasDisponibles(fechas)
 
-      // Cargar categorías y subtipos disponibles
-      const categorias = await getCategoriasDisponibles()
-      setCategoriasDisponibles(categorias)
-      
-      const subtipos = await getSubtiposDisponibles()
-      setSubtiposDisponibles(subtipos)
-
     } catch (error) {
       console.error('Error cargando datos:', error)
     } finally {
@@ -53,7 +44,6 @@ export default function Home() {
         años: criterios.años,
         tipoFiltro: criterios.tipoFiltro,
         categorias: criterios.categorias,
-        subtipos: criterios.subtipos,
         limite: criterios.limite
       })
 
@@ -83,12 +73,6 @@ export default function Home() {
               </span>
               <span className="patch-relevance">
                 Relevancia: {patch.relevance}/100
-              </span>
-              <span className="patch-category">
-                📋 {patch.categoria}
-              </span>
-              <span className="patch-subtype">
-                🏷️ {patch.subtipo}
               </span>
             </div>
             <div className="patch-meta">
@@ -154,8 +138,6 @@ export default function Home() {
       <BuscadorAvanzado
         onBuscar={handleBusqueda}
         fechasDisponibles={fechasDisponibles}
-        categoriasDisponibles={categoriasDisponibles}
-        subtiposDisponibles={subtiposDisponibles}
       />
 
       {/* Resultados */}

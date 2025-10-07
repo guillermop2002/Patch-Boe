@@ -182,6 +182,7 @@ class PatchDatabase {
     meses?: string[] // YYYYMM
     años?: string[] // YYYY
     tipoFiltro?: 'buff' | 'nerf' | 'ambos'
+    categorias?: string[]
   }): PatchEntry[] {
     let whereConditions: string[] = [];
     let params: any[] = [];
@@ -190,6 +191,13 @@ class PatchDatabase {
     if (criterios.tipoFiltro && criterios.tipoFiltro !== 'ambos') {
       whereConditions.push('tipo = ?');
       params.push(criterios.tipoFiltro);
+    }
+
+    // Filtro por categorías
+    if (criterios.categorias && criterios.categorias.length > 0) {
+      const placeholders = criterios.categorias.map(() => '?').join(',');
+      whereConditions.push(`categoria IN (${placeholders})`);
+      params.push(...criterios.categorias);
     }
 
     // Construir condiciones de fecha

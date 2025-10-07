@@ -7,7 +7,6 @@ export interface PatchEntry {
   titulo: string;
   tipo: 'buff' | 'nerf';
   categoria: string;
-  subtipo: string;
   summary: string;
   relevance: number;
   contenido: string;
@@ -26,7 +25,6 @@ export interface CriteriosBusqueda {
   años?: string[] // YYYY
   tipoFiltro?: 'buff' | 'nerf' | 'ambos'
   categorias?: string[]
-  subtipos?: string[]
   limite?: number
 }
 
@@ -47,26 +45,6 @@ export async function getFechasDisponibles(): Promise<string[]> {
   }
   const data = await response.json()
   return data.fechas
-}
-
-// Obtener categorías disponibles
-export async function getCategoriasDisponibles(): Promise<string[]> {
-  const response = await fetch('/api/patches?action=categorias-disponibles')
-  if (!response.ok) {
-    throw new Error('Error obteniendo categorías disponibles')
-  }
-  const data = await response.json()
-  return data.categorias
-}
-
-// Obtener subtipos disponibles
-export async function getSubtiposDisponibles(): Promise<{ [categoria: string]: string[] }> {
-  const response = await fetch('/api/patches?action=subtipos-disponibles')
-  if (!response.ok) {
-    throw new Error('Error obteniendo subtipos disponibles')
-  }
-  const data = await response.json()
-  return data.subtipos
 }
 
 // Búsqueda avanzada
@@ -96,10 +74,6 @@ export async function buscarPatches(criterios: CriteriosBusqueda): Promise<Patch
 
   if (criterios.categorias && criterios.categorias.length > 0) {
     params.append('categorias', criterios.categorias.join(','))
-  }
-
-  if (criterios.subtipos && criterios.subtipos.length > 0) {
-    params.append('subtipos', criterios.subtipos.join(','))
   }
 
   const response = await fetch(`/api/patches?${params.toString()}`)

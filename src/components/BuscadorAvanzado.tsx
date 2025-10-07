@@ -6,8 +6,6 @@ import { formatearFecha, fechaAFormatoBD, esFechaValida } from '@/lib/fechas'
 interface BuscadorProps {
   onBuscar: (criterios: CriteriosBusqueda) => void
   fechasDisponibles: string[]
-  categoriasDisponibles: string[]
-  subtiposDisponibles: { [categoria: string]: string[] }
 }
 
 export interface CriteriosBusqueda {
@@ -15,22 +13,44 @@ export interface CriteriosBusqueda {
   meses?: string[] // YYYYMM
   años?: string[] // YYYY
   tipoFiltro?: 'buff' | 'nerf' | 'ambos'
-  categorias?: string[]
-  subtipos?: string[]
+  categorias?: string[] // Categorías seleccionadas
   limite?: number // Número máximo de resultados
 }
 
-export default function BuscadorAvanzado({ onBuscar, fechasDisponibles, categoriasDisponibles, subtiposDisponibles }: BuscadorProps) {
+export default function BuscadorAvanzado({ onBuscar, fechasDisponibles }: BuscadorProps) {
   const [fechasSeleccionadas, setFechasSeleccionadas] = useState<string[]>([])
   const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([])
   const [añosSeleccionados, setAñosSeleccionados] = useState<string[]>([])
   const [tipoFiltro, setTipoFiltro] = useState<'buff' | 'nerf' | 'ambos'>('ambos')
   const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([])
-  const [subtiposSeleccionados, setSubtiposSeleccionados] = useState<string[]>([])
   const [fechaInput, setFechaInput] = useState('')
   const [mesInput, setMesInput] = useState('')
   const [añoInput, setAñoInput] = useState('')
   const [limite, setLimite] = useState(10)
+
+  // Lista de categorías disponibles
+  const categoriasDisponibles = [
+    'NormasYDisposiciones',
+    'DisposicionesAdministrativas',
+    'ActosIndividuales',
+    'AnunciosEdictosNotificaciones',
+    'ContratacionPublica',
+    'ConvocatoriasEmpleoPublico',
+    'SubvencionesAyudas',
+    'FiscalidadPresupuestos',
+    'RegistrosPropiedadMercantil',
+    'Jurisprudencia',
+    'NormativaInternacionalUE',
+    'CorreccionesRectificaciones',
+    'InformesEstadisticas',
+    'TransparenciaFiscalizacion',
+    'ConcursosYProcedimientos',
+    'SectorialesTecnicos',
+    'ComunicadosInstitucionales',
+    'PublicidadLegal',
+    'MedidasEmergencia',
+    'Otros'
+  ]
 
   // Obtener años y meses únicos de las fechas disponibles
   const añosDisponibles = [...new Set(fechasDisponibles.map(f => f.substring(0, 4)))].sort()
@@ -86,12 +106,8 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles, categori
     }
   }
 
-  const toggleSubtipo = (subtipo: string) => {
-    if (subtiposSeleccionados.includes(subtipo)) {
-      setSubtiposSeleccionados(subtiposSeleccionados.filter(s => s !== subtipo))
-    } else {
-      setSubtiposSeleccionados([...subtiposSeleccionados, subtipo])
-    }
+  const formatearCategoria = (categoria: string) => {
+    return categoria.replace(/([A-Z])/g, ' $1').trim()
   }
 
   const formatearMes = (mesBD: string) => {
@@ -108,7 +124,6 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles, categori
       años: añosSeleccionados,
       tipoFiltro,
       categorias: categoriasSeleccionadas,
-      subtipos: subtiposSeleccionados,
       limite
     }
     onBuscar(criterios)
@@ -118,9 +133,8 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles, categori
     setFechasSeleccionadas([])
     setMesesSeleccionados([])
     setAñosSeleccionados([])
-    setTipoFiltro('ambos')
     setCategoriasSeleccionadas([])
-    setSubtiposSeleccionados([])
+    setTipoFiltro('ambos')
     setLimite(10)
     setFechaInput('')
     setMesInput('')
@@ -246,55 +260,33 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles, categori
         <div className="md:col-span-3"></div>
       </div>
 
-      {/* Filtros por categorías y subtipos */}
+      {/* Sección de categorías */}
       <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">📋 Filtros por Categorías del BOE</h3>
-        
-        {/* Categorías */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Categorías principales</label>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {categoriasDisponibles.map(categoria => (
-              <label key={categoria} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={categoriasSeleccionadas.includes(categoria)}
-                  onChange={() => toggleCategoria(categoria)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700 truncate" title={categoria}>
-                  {categoria}
-                </span>
-              </label>
-            ))}
-          </div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">Categorías</label>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          {categoriasDisponibles.map(categoria => (
+            <button
+              key={categoria}
+              onClick={() => toggleCategoria(categoria)}
+              className={`px-3 py-2 text-sm rounded-md border transition-colors ${
+                categoriasSeleccionadas.includes(categoria)
+                  ? 'bg-orange-500 text-white border-orange-500'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-orange-50 hover:border-orange-300'
+              }`}
+            >
+              {formatearCategoria(categoria)}
+            </button>
+          ))}
         </div>
-
-        {/* Subtipos */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Subtipos específicos</label>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-            {Object.entries(subtiposDisponibles).map(([categoria, subtipos]) => 
-              subtipos.map(subtipo => (
-                <label key={`${categoria}-${subtipo}`} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={subtiposSeleccionados.includes(subtipo)}
-                    onChange={() => toggleSubtipo(subtipo)}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-600 truncate" title={`${categoria} - ${subtipo}`}>
-                    {subtipo}
-                  </span>
-                </label>
-              ))
-            )}
+        {categoriasSeleccionadas.length > 0 && (
+          <div className="mt-3 text-sm text-gray-600">
+            {categoriasSeleccionadas.length} categoría{categoriasSeleccionadas.length > 1 ? 's' : ''} seleccionada{categoriasSeleccionadas.length > 1 ? 's' : ''}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Chips seleccionados */}
-      {(fechasSeleccionadas.length > 0 || mesesSeleccionados.length > 0 || añosSeleccionados.length > 0 || categoriasSeleccionadas.length > 0 || subtiposSeleccionados.length > 0) && (
+      {(fechasSeleccionadas.length > 0 || mesesSeleccionados.length > 0 || añosSeleccionados.length > 0 || categoriasSeleccionadas.length > 0) && (
         <div className="mb-6">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Filtros activos:</h3>
           <div className="flex flex-wrap gap-2">
@@ -333,21 +325,10 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles, categori
             ))}
             {categoriasSeleccionadas.map(categoria => (
               <span key={categoria} className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 text-sm rounded-full">
-                📋 {categoria}
+                🏷️ {formatearCategoria(categoria)}
                 <button
                   onClick={() => toggleCategoria(categoria)}
                   className="text-orange-600 hover:text-orange-800 ml-1"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            {subtiposSeleccionados.map(subtipo => (
-              <span key={subtipo} className="inline-flex items-center gap-1 px-3 py-1 bg-teal-100 text-teal-800 text-sm rounded-full">
-                🏷️ {subtipo}
-                <button
-                  onClick={() => toggleSubtipo(subtipo)}
-                  className="text-teal-600 hover:text-teal-800 ml-1"
                 >
                   ×
                 </button>
