@@ -388,6 +388,7 @@ export async function classifyAndSaveToDatabaseHistorical(fecha: string): Promis
           fecha: fecha,
           titulo: originalDoc.TITULO,
           tipo: classification.tipo,
+          categoria: classification.categoria,
           summary: classification.summary,
           relevance: classification.relevance,
           contenido: originalDoc.CONTENIDO
