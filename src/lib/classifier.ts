@@ -155,11 +155,11 @@ Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos esp
 ⚠️ CRÍTICO: Sé ESTRICTO pero EQUILIBRADO. El 75% de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto sectorial o nacional.
 
 CRITERIOS DE CLASIFICACIÓN:
-- **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos (con impacto sectorial significativo o nacional)
-- **NERF**: Medidas que restringen, endurecen condiciones o reducen beneficios (con impacto sectorial significativo o nacional)
-- **ACTUALIZACIÓN**: Cambios técnicos, administrativos, nombramientos individuales, correcciones, anuncios sin impacto
+- **BUFF**: Medidas que benefician, mejoran condiciones o amplían derechos (con relevancia nacional o sectorial significativa)
+- **NERF**: Medidas que restringen, endurecen condiciones o reducen beneficios (con relevancia nacional o sectorial significativa)
+- **ACTUALIZACIÓN**: Cambios técnicos, administrativos, nombramientos, convocatorias locales, correcciones, etc.
 
-🔴 REGLA EQUILIBRADA: Clasifica como BUFF/NERF si hay impacto sectorial significativo o afecta a grupos amplios. Solo ACTUALIZACIÓN si es puramente administrativo o individual.
+🔴 REGLA EQUILIBRADA: Si un documento tiene impacto sectorial significativo o afecta a grupos amplios, puede ser BUFF/NERF. Solo ACTUALIZACIÓN si es puramente administrativo.
 
 📋 CATEGORÍAS DEL BOE (clasifica cada documento en UNA categoría exacta):
 
@@ -199,15 +199,15 @@ ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 
 - **55-69**: Regulaciones sectoriales moderadas, afectan a sectores específicos pero amplios
   Ejemplo: "Orden de nuevas ayudas para autónomos" → 62
-  ⚠️ ~8% de documentos deberían estar aquí
+  ⚠️ ~5% de documentos deberían estar aquí
 
 - **40-54**: Cambios administrativos con impacto limitado, regulaciones de nicho
   Ejemplo: "Resolución de bases reguladoras de subvenciones para cooperativas agrarias" → 48
-  ⚠️ ~12% de documentos deberían estar aquí
+  ⚠️ ~8% de documentos deberían estar aquí
 
 - **25-39**: Convocatorias de empleo público, nombramientos importantes, correcciones menores
   Ejemplo: "Convocatoria de 50 plazas de funcionarios del Ministerio X" → 32
-  ⚠️ ~15% de documentos pueden estar aquí
+  ⚠️ ~12% de documentos pueden estar aquí
 
 - **10-24**: Nombramientos individuales, correcciones de erratas, anuncios administrativos
   Ejemplo: "Nombramiento de Director General de la Agencia X" → 18
@@ -215,16 +215,16 @@ ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 
 - **1-9**: Cambios puramente técnicos, correcciones tipográficas, anuncios sin impacto
   Ejemplo: "Corrección de errores en la Orden de 15 de marzo" → 5
-  ⚠️ ~40% de documentos deberían estar aquí
+  ⚠️ ~50% de documentos deberían estar aquí
   ⚠️ ~15% de documentos pueden estar aquí
 
 EJEMPLOS CONCRETOS DE CLASIFICACIÓN EQUILIBRADA:
 
 1. "Convocatoria de 200 plazas de Policía Nacional"
-   → BUFF, ConvocatoriasEmpleoPublico, relevancia: 35 (afecta a aspirantes y mejora seguridad nacional)
+   → BUFF, ConvocatoriasEmpleoPublico, relevancia: 32 (afecta a aspirantes y mejora seguridad)
 
 2. "Modificación del convenio ICO para facilidades de financiación empresarial"
-   → BUFF, SubvencionesAyudas, relevancia: 45 (ayuda a empresas, impacto sectorial significativo)
+   → BUFF, SubvencionesAyudas, relevancia: 45 (ayuda a empresas, sectorial importante)
 
 3. "Admisión a trámite de recurso de inconstitucionalidad contra ley autonómica"
    → ACTUALIZACIÓN, Jurisprudencia, relevancia: 15 (es un trámite procesal)
@@ -239,25 +239,25 @@ EJEMPLOS CONCRETOS DE CLASIFICACIÓN EQUILIBRADA:
    → ACTUALIZACIÓN, SubvencionesAyudas, relevancia: 3 (afecta solo a 3 personas específicas)
 
 7. "Real Decreto de nuevas medidas de apoyo a la industria automotriz"
-   → BUFF, SectorialesTecnicos, relevancia: 52 (sectorial importante, afecta a miles de trabajadores)
+   → BUFF, SectorialesTecnicos, relevancia: 52 (sectorial importante)
 
 8. "Convocatoria de ayudas para jóvenes agricultores"
-   → BUFF, SubvencionesAyudas, relevancia: 38 (sectorial moderado, ayuda a grupo específico)
+   → BUFF, SubvencionesAyudas, relevancia: 35 (sectorial moderado)
 
 DOCUMENTOS A ANALIZAR:
 ${batchPrompts}
 
 INSTRUCCIONES EQUILIBRADAS:
-1. Sé CONSERVADOR con las puntuaciones altas (70+): solo para impacto nacional real
+1. Sé CONSERVADOR con las puntuaciones altas (70+): reserva para impacto nacional real
 2. El 75% de documentos deberían ser ACTUALIZACIÓN, 25% BUFF/NERF
-3. Clasifica como BUFF/NERF si hay impacto sectorial significativo o afecta a grupos amplios
+3. Clasifica como BUFF/NERF si hay impacto sectorial significativo o nacional
 4. USA VALORES ÚNICOS Y VARIADOS del 1-100: 3, 7, 12, 18, 23, 28, 35, 42, etc.
 5. EVITA PUNTUACIONES REPETIDAS: Si ya usaste 25, usa 23, 27, 29, 31, etc.
 6. Nombramientos individuales, correcciones menores → ACTUALIZACIÓN
 7. Convocatorias sectoriales, ayudas específicas → BUFF/NERF según impacto
 8. Si dudas entre buff/nerf y actualización → evalúa el impacto sectorial
-9. DISTRIBUYE las puntuaciones: 40% en 1-9, 20% en 10-24, 15% en 25-39, etc.
-10. EQUILIBRADO: BUFF/NERF para medidas con impacto sectorial significativo o nacional
+9. DISTRIBUYE las puntuaciones: 50% en 1-9, 20% en 10-24, 12% en 25-39, etc.
+10. IMPORTANTE: Si un documento tiene algún impacto sectorial o afecta a grupos específicos, clasifícalo como BUFF/NERF, no como ACTUALIZACIÓN
 
 Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
 {
