@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { formatearFecha, fechaAFormatoBD, esFechaValida } from '@/lib/fechas'
+import { categoriasDisponibles, getCategoriaColors } from '@/lib/categorias'
 
 interface BuscadorProps {
   onBuscar: (criterios: CriteriosBusqueda) => void
@@ -28,29 +29,6 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles }: Buscad
   const [añoInput, setAñoInput] = useState('')
   const [limite, setLimite] = useState(10)
 
-  // Lista de categorías disponibles
-  const categoriasDisponibles = [
-    'NormasYDisposiciones',
-    'DisposicionesAdministrativas',
-    'ActosIndividuales',
-    'AnunciosEdictosNotificaciones',
-    'ContratacionPublica',
-    'ConvocatoriasEmpleoPublico',
-    'SubvencionesAyudas',
-    'FiscalidadPresupuestos',
-    'RegistrosPropiedadMercantil',
-    'Jurisprudencia',
-    'NormativaInternacionalUE',
-    'CorreccionesRectificaciones',
-    'InformesEstadisticas',
-    'TransparenciaFiscalizacion',
-    'ConcursosYProcedimientos',
-    'SectorialesTecnicos',
-    'ComunicadosInstitucionales',
-    'PublicidadLegal',
-    'MedidasEmergencia',
-    'Otros'
-  ]
 
   // Obtener años y meses únicos de las fechas disponibles
   const añosDisponibles = [...new Set(fechasDisponibles.map(f => f.substring(0, 4)))].sort()
@@ -98,16 +76,12 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles }: Buscad
     setAñosSeleccionados(añosSeleccionados.filter(a => a !== año))
   }
 
-  const toggleCategoria = (categoria: string) => {
-    if (categoriasSeleccionadas.includes(categoria)) {
-      setCategoriasSeleccionadas(categoriasSeleccionadas.filter(c => c !== categoria))
+  const toggleCategoria = (categoriaId: string) => {
+    if (categoriasSeleccionadas.includes(categoriaId)) {
+      setCategoriasSeleccionadas(categoriasSeleccionadas.filter(c => c !== categoriaId))
     } else {
-      setCategoriasSeleccionadas([...categoriasSeleccionadas, categoria])
+      setCategoriasSeleccionadas([...categoriasSeleccionadas, categoriaId])
     }
-  }
-
-  const formatearCategoria = (categoria: string) => {
-    return categoria.replace(/([A-Z])/g, ' $1').trim()
   }
 
   const formatearMes = (mesBD: string) => {
@@ -264,19 +238,22 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles }: Buscad
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-3">Categorías</label>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          {categoriasDisponibles.map(categoria => (
-            <button
-              key={categoria}
-              onClick={() => toggleCategoria(categoria)}
-              className={`px-3 py-2 text-sm rounded-md border transition-colors ${
-                categoriasSeleccionadas.includes(categoria)
-                  ? 'bg-orange-500 text-white border-orange-500'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-orange-50 hover:border-orange-300'
-              }`}
-            >
-              {formatearCategoria(categoria)}
-            </button>
-          ))}
+          {categoriasDisponibles.map(categoria => {
+            const isSelected = categoriasSeleccionadas.includes(categoria.id)
+            return (
+              <button
+                key={categoria.id}
+                onClick={() => toggleCategoria(categoria.id)}
+                className={`px-3 py-2 text-sm rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
+                  isSelected
+                    ? `${categoria.color} text-white border-transparent shadow-lg`
+                    : `bg-white ${categoria.colorText} ${categoria.colorBorder} hover:${categoria.colorLight} hover:shadow-md`
+                }`}
+              >
+                {categoria.nombre}
+              </button>
+            )
+          })}
         </div>
         {categoriasSeleccionadas.length > 0 && (
           <div className="mt-3 text-sm text-gray-600">
@@ -323,17 +300,20 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles }: Buscad
                 </button>
               </span>
             ))}
-            {categoriasSeleccionadas.map(categoria => (
-              <span key={categoria} className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 text-sm rounded-full">
-                🏷️ {formatearCategoria(categoria)}
-                <button
-                  onClick={() => toggleCategoria(categoria)}
-                  className="text-orange-600 hover:text-orange-800 ml-1"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+            {categoriasSeleccionadas.map(categoriaId => {
+              const categoria = getCategoriaColors(categoriaId)
+              return (
+                <span key={categoriaId} className={`inline-flex items-center gap-1 px-3 py-1 ${categoria.colorLight} ${categoria.colorText} text-sm rounded-full border ${categoria.colorBorder}`}>
+                  🏷️ {categoria.nombre}
+                  <button
+                    onClick={() => toggleCategoria(categoriaId)}
+                    className={`${categoria.colorText} hover:opacity-70 ml-1 font-bold`}
+                  >
+                    ×
+                  </button>
+                </span>
+              )
+            })}
           </div>
         </div>
       )}

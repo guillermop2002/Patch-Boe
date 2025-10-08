@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { PatchEntry, getPatchesByFecha, getFechasDisponibles, buscarPatches } from '@/lib/api-client'
 import { getFechaHoy, formatearFecha } from '@/lib/fechas'
 import BuscadorAvanzado, { CriteriosBusqueda } from '@/components/BuscadorAvanzado'
+import { CategoriaBadge } from '@/lib/categorias'
 
 export default function Home() {
   const [patchesHoy, setPatchesHoy] = useState<PatchEntry[]>([])
@@ -74,6 +75,7 @@ export default function Home() {
               <span className="patch-relevance">
                 Relevancia: {patch.relevance}/100
               </span>
+              <CategoriaBadge categoriaId={patch.categoria} className="ml-2" />
             </div>
             <div className="patch-meta">
               <span className="patch-date">📅 {formatearFecha(patch.fecha)}</span>
