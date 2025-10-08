@@ -240,15 +240,61 @@ export default function BuscadorAvanzado({ onBuscar, fechasDisponibles }: Buscad
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {categoriasDisponibles.map(categoria => {
             const isSelected = categoriasSeleccionadas.includes(categoria.id)
+            
+            // Mapeo de colores para estilos inline
+            const colorMap: { [key: string]: { bg: string; text: string; border: string; hover: string } } = {
+              'blue': { bg: '#3b82f6', text: '#1e40af', border: '#93c5fd', hover: '#dbeafe' },
+              'indigo': { bg: '#6366f1', text: '#3730a3', border: '#a5b4fc', hover: '#e0e7ff' },
+              'purple': { bg: '#8b5cf6', text: '#7c3aed', border: '#c4b5fd', hover: '#f3e8ff' },
+              'pink': { bg: '#ec4899', text: '#be185d', border: '#f9a8d4', hover: '#fce7f3' },
+              'red': { bg: '#ef4444', text: '#991b1b', border: '#fca5a5', hover: '#fee2e2' },
+              'orange': { bg: '#f97316', text: '#9a3412', border: '#fb923c', hover: '#fed7aa' },
+              'yellow': { bg: '#eab308', text: '#92400e', border: '#fbbf24', hover: '#fef3c7' },
+              'green': { bg: '#22c55e', text: '#166534', border: '#86efac', hover: '#dcfce7' },
+              'teal': { bg: '#14b8a6', text: '#115e59', border: '#5eead4', hover: '#ccfbf1' },
+              'cyan': { bg: '#06b6d4', text: '#155e75', border: '#67e8f9', hover: '#cffafe' },
+              'sky': { bg: '#0ea5e9', text: '#0c4a6e', border: '#7dd3fc', hover: '#e0f2fe' },
+              'rose': { bg: '#f43f5e', text: '#881337', border: '#fda4af', hover: '#ffe4e6' },
+              'violet': { bg: '#8b5cf6', text: '#5b21b6', border: '#a78bfa', hover: '#ede9fe' },
+              'emerald': { bg: '#10b981', text: '#065f46', border: '#6ee7b7', hover: '#d1fae5' },
+              'amber': { bg: '#f59e0b', text: '#92400e', border: '#fbbf24', hover: '#fef3c7' },
+              'lime': { bg: '#84cc16', text: '#365314', border: '#bef264', hover: '#ecfccb' },
+              'slate': { bg: '#64748b', text: '#334155', border: '#94a3b8', hover: '#f1f5f9' },
+              'gray': { bg: '#6b7280', text: '#374151', border: '#d1d5db', hover: '#f9fafb' },
+              'neutral': { bg: '#737373', text: '#404040', border: '#d4d4d4', hover: '#fafafa' }
+            };
+            
+            const colorKey = categoria.color.replace('bg-', '').replace('-500', '').replace('-600', '');
+            const colors = colorMap[colorKey] || colorMap['gray'];
+            
             return (
               <button
                 key={categoria.id}
                 onClick={() => toggleCategoria(categoria.id)}
-                className={`px-3 py-2 text-sm rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
-                  isSelected
-                    ? `${categoria.color} text-white border-transparent shadow-lg`
-                    : `bg-white ${categoria.colorText} ${categoria.colorBorder} hover:${categoria.colorLight} hover:shadow-md`
-                }`}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.875rem',
+                  borderRadius: '0.5rem',
+                  border: '2px solid',
+                  transition: 'all 0.2s ease',
+                  transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                  background: isSelected ? colors.bg : 'white',
+                  color: isSelected ? 'white' : colors.text,
+                  borderColor: isSelected ? 'transparent' : colors.border,
+                  boxShadow: isSelected ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = colors.hover;
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
+                }}
               >
                 {categoria.nombre}
               </button>

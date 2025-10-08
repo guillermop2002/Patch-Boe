@@ -44,13 +44,47 @@ export function getCategoriaColors(categoriaId: string): CategoriaInfo {
 export function CategoriaBadge({ categoriaId, className = '' }: { categoriaId: string; className?: string }) {
   const categoria = getCategoriaColors(categoriaId);
   
+  // Mapeo de colores a valores CSS
+  const colorMap: { [key: string]: { bg: string; text: string; border: string } } = {
+    'blue': { bg: 'linear-gradient(135deg, #dbeafe, #bfdbfe)', text: '#1e40af', border: '#93c5fd' },
+    'indigo': { bg: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)', text: '#3730a3', border: '#a5b4fc' },
+    'purple': { bg: 'linear-gradient(135deg, #f3e8ff, #e9d5ff)', text: '#7c3aed', border: '#c4b5fd' },
+    'pink': { bg: 'linear-gradient(135deg, #fce7f3, #fbcfe8)', text: '#be185d', border: '#f9a8d4' },
+    'red': { bg: 'linear-gradient(135deg, #fee2e2, #fecaca)', text: '#991b1b', border: '#fca5a5' },
+    'orange': { bg: 'linear-gradient(135deg, #fed7aa, #fdba74)', text: '#9a3412', border: '#fb923c' },
+    'yellow': { bg: 'linear-gradient(135deg, #fef3c7, #fde68a)', text: '#92400e', border: '#fbbf24' },
+    'green': { bg: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', text: '#166534', border: '#86efac' },
+    'teal': { bg: 'linear-gradient(135deg, #ccfbf1, #99f6e4)', text: '#115e59', border: '#5eead4' },
+    'cyan': { bg: 'linear-gradient(135deg, #cffafe, #a5f3fc)', text: '#155e75', border: '#67e8f9' },
+    'sky': { bg: 'linear-gradient(135deg, #e0f2fe, #bae6fd)', text: '#0c4a6e', border: '#7dd3fc' },
+    'rose': { bg: 'linear-gradient(135deg, #ffe4e6, #fecdd3)', text: '#881337', border: '#fda4af' },
+    'violet': { bg: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', text: '#5b21b6', border: '#a78bfa' },
+    'emerald': { bg: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', text: '#065f46', border: '#6ee7b7' },
+    'amber': { bg: 'linear-gradient(135deg, #fef3c7, #fde68a)', text: '#92400e', border: '#fbbf24' },
+    'lime': { bg: 'linear-gradient(135deg, #ecfccb, #d9f99d)', text: '#365314', border: '#bef264' },
+    'slate': { bg: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)', text: '#334155', border: '#94a3b8' },
+    'gray': { bg: 'linear-gradient(135deg, #f9fafb, #f3f4f6)', text: '#374151', border: '#d1d5db' },
+    'neutral': { bg: 'linear-gradient(135deg, #fafafa, #f5f5f5)', text: '#404040', border: '#d4d4d4' }
+  };
+  
+  const colorKey = categoria.color.replace('bg-', '').replace('-500', '').replace('-600', '');
+  const colors = colorMap[colorKey] || colorMap['gray'];
+  
   return (
     <span 
-      className={`categoria-badge ${categoria.colorLight} ${categoria.colorText} ${categoria.colorBorder} ${className}`}
+      className={`categoria-badge ${className}`}
       style={{
-        background: `linear-gradient(135deg, var(--${categoria.color.replace('bg-', '')}-100), var(--${categoria.color.replace('bg-', '')}-200))`,
-        borderColor: `var(--${categoria.colorBorder.replace('border-', '')})`,
-        color: `var(--${categoria.colorText.replace('text-', '')})`
+        background: colors.bg,
+        color: colors.text,
+        borderColor: colors.border,
+        border: '1px solid',
+        borderRadius: '12px',
+        padding: '0.25rem 0.5rem',
+        fontSize: '0.7rem',
+        fontWeight: '500',
+        display: 'inline-flex',
+        alignItems: 'center',
+        transition: 'all 0.2s ease'
       }}
     >
       {categoria.nombre}
