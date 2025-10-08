@@ -130,7 +130,7 @@ export default function Home() {
       </div>
 
       <h1 className="main-title">
-        🇪🇸 Patch Legislativo
+        🇪🇸 Parche Legislativo
       </h1>
 
       <p className="main-subtitle">

@@ -13,14 +13,14 @@ export default function Acerca() {
       </div>
 
       <h1 className="main-title">
-        Acerca de Patch Legislativo
+        Acerca de Parche Legislativo
       </h1>
       
       <div className="search-card">
         <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">¿Qué es Patch Legislativo?</h2>
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">¿Qué es Parche Legislativo?</h2>
           <p className="text-gray-600 leading-relaxed">
-            Patch Legislativo es una herramienta de periodismo objetivo que analiza y clasifica 
+            Parche Legislativo es una herramienta de periodismo objetivo que analiza y clasifica 
             los cambios normativos publicados en el Boletín Oficial del Estado (BOE) utilizando 
             terminología de videojuegos para hacer más accesible la información legislativa.
           </p>
