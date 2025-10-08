@@ -122,17 +122,18 @@ export default function Home() {
       <div className="text-center mb-6">
         <a
           href="/acerca"
-          className="inline-flex items-center px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+          className="btn btn-secondary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
         >
           ℹ️ Acerca del proyecto
         </a>
       </div>
 
-      <h1 className="main-title text-center mb-4">
+      <h1 className="main-title">
         🇪🇸 Patch Legislativo
       </h1>
 
-      <p className="text-center text-gray-600 mb-8">
+      <p className="main-subtitle">
         Descubre los cambios normativos del BOE como si fueran parches de videojuegos
       </p>
 
