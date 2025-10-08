@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { formatearFecha, fechaAFormatoBD, esFechaValida } from '@/lib/fechas'
-import { categoriasDisponibles, getCategoriaColors } from '@/lib/categorias'
+import { categoriasDisponibles, getCategoriaColors } from '@/lib/categorias.tsx'
 
 interface BuscadorProps {
   onBuscar: (criterios: CriteriosBusqueda) => void

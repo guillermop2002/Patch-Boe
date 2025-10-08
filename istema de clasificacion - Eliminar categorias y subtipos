@@ -1,0 +1,156 @@
+warning: in the working copy of 'src/lib/classifier.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/lib/classifier.ts b/src/lib/classifier.ts[m
+[1mindex 97dac4f..0c334c3 100644[m
+[1m--- a/src/lib/classifier.ts[m
+[1m+++ b/src/lib/classifier.ts[m
+[36m@@ -83,8 +83,6 @@[m [masync function retryWithDifferentKey<T>([m
+ interface ClassificationResult {[m
+   id: string;[m
+   tipo: 'buff' | 'nerf' | 'actualización';[m
+[31m-  categoria: string;[m
+[31m-  subtipo: string;[m
+   summary: string;[m
+   relevance: number;[m
+ }[m
+[36m@@ -99,10 +97,6 @@[m [mfunction validateClassification(result: any): result is ClassificationResult {[m
+   [m
+   return ([m
+     validTypes.includes(result.tipo) &&[m
+[31m-    typeof result.categoria === 'string' &&[m
+[31m-    result.categoria.length > 0 &&[m
+[31m-    typeof result.subtipo === 'string' &&[m
+[31m-    result.subtipo.length > 0 &&[m
+     typeof result.summary === 'string' &&[m
+     result.summary.length > 0 &&[m
+     Number.isInteger(result.relevance) &&[m
+[36m@@ -131,7 +125,7 @@[m [masync function classifyItems(data: PromptData[]): Promise<ClassificationResult[][m
+     }).join('\n\n---\n\n');[m
+ [m
+     const prompt = `[m
+[31m-Eres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL y CATEGORIZA cada documento según el tipo de publicación del BOE.[m
+[32m+[m[32mEres un analista legislativo ULTRA-CRÍTICO que clasifica cambios normativos españoles según su RELEVANCIA NACIONAL REAL.[m
+ [m
+ ⚠️ CRÍTICO: Sé ESTRICTO pero EQUILIBRADO. El 80% de documentos del BOE son cambios administrativos menores, pero algunos sí tienen impacto sectorial o nacional.[m
+ [m
+[36m@@ -142,81 +136,6 @@[m [mCRITERIOS DE CLASIFICACIÓN:[m
+ [m
+ 🔴 REGLA EQUILIBRADA: Si un documento tiene impacto sectorial significativo o afecta a grupos amplios, puede ser BUFF/NERF. Solo ACTUALIZACIÓN si es puramente administrativo.[m
+ [m
+[31m-📋 CATEGORÍAS DEL BOE (clasifica cada documento en UNA categoría y subtipo):[m
+[31m-[m
+[31m-1. **Normas y disposiciones generales**[m
+[31m-   Subtipos: Ley, ProyectoLey, Anteproyecto, RealDecretoLey, RealDecreto, Decreto, OrdenMinisterial, Reglamento, Ordenanza[m
+[31m-   Ejemplos: Ley de presupuestos, Real Decreto regulatorio, Orden ministerial[m
+[31m-[m
+[31m-2. **Disposiciones administrativas / actos generales**[m
+[31m-   Subtipos: Circular, Instruccion, ResolucionGeneral, Acuerdo, NotaInformativa[m
+[31m-   Ejemplos: Circulares de la administración, instrucciones internas[m
+[31m-[m
+[31m-3. **Actos individuales / resoluciones**[m
+[31m-   Subtipos: Nombramiento, Cese, ConcesionIndividual, SancionIndividual, ResolucionAdministrativa[m
+[31m-   Ejemplos: nombramientos de personal, resoluciones de subvención individual[m
+[31m-[m
+[31m-4. **Anuncios, edictos y notificaciones públicas**[m
+[31m-   Subtipos: Edicto, Notificacion, AnuncioRegistroCivil, AnuncioJudicial, Subasta[m
+[31m-   Ejemplos: edictos de subastas, notificaciones a desconocidos[m
+[31m-[m
+[31m-5. **Contratación pública y compras**[m
+[31m-   Subtipos: ConvocatoriaLicitacion, Pliego, Adjudicacion, Contratos, Suministros[m
+[31m-   Ejemplos: anuncios de concursos públicos, adjudicaciones de contratos[m
+[31m-[m
+[31m-6. **Convocatorias y empleo público**[m
+[31m-   Subtipos: ConvocatoriaOposicion, BasesSelectivas, ResultadosSeleccion, ListasReservas[m
+[31m-   Ejemplos: oferta de empleo público, listas definitivas de aprobados[m
+[31m-[m
+[31m-7. **Subvenciones, ayudas y prestaciones**[m
+[31m-   Subtipos: ConvocatoriaAyuda, BasesSubvencion, ResolucionConcesion, Reintegro[m
+[31m-   Ejemplos: convocatorias de ayudas, resoluciones de concesión[m
+[31m-[m
+[31m-8. **Fiscalidad, presupuestos y cuentas públicas**[m
+[31m-   Subtipos: Presupuestos, ModificacionPresupuestaria, OrdenTasas, CircularFiscal[m
+[31m-   Ejemplos: cuentas generales, modificaciones presupuestarias[m
+[31m-[m
+[31m-9. **Registros oficiales y mercantiles / Propiedad**[m
+[31m-   Subtipos: RegistroMercantil, RegistroPropiedad, InscripcionPatente, Marca[m
+[31m-   Ejemplos: asientos registrales, publicaciones de constitución de sociedades[m
+[31m-[m
+[31m-10. **Jurisprudencia y actos de los órganos jurisdiccionales**[m
+[31m-    Subtipos: Sentencia, Auto, Providencia, ComunicadoTribunal[m
+[31m-    Ejemplos: resoluciones publicadas por tribunales[m
+[31m-[m
+[31m-11. **Normativa y actos internacionales / UE**[m
+[31m-    Subtipos: DirectivaUE, ReglamentoUE, Tratado, AcuerdoInternacional, DecisionComunitaria[m
+[31m-    Ejemplos: trasposición de directivas, publicación de tratados[m
+[31m-[m
+[31m-12. **Correcciones, rectificaciones y notas aclaratorias**[m
+[31m-    Subtipos: CorreccionErrores, Rectificacion, Aclaracion[m
+[31m-    Ejemplos: corrección de erratas en normas o anuncios previos[m
+[31m-[m
+[31m-13. **Informes, estudios y estadísticas oficiales**[m
+[31m-    Subtipos: InformeTecnico, Memoria, EstadisticaOficial, Dictamen[m
+[31m-    Ejemplos: informes de ministerios, memorias de actividad[m
+[31m-[m
+[31m-14. **Transparencia, control y fiscalización**[m
+[31m-    Subtipos: CuentaAnual, InformeAuditoria, DeclaracionPatrimonial, AcuerdoPleno[m
+[31m-    Ejemplos: cuentas de organismos, informes de interventoría[m
+[31m-[m
+[31m-15. **Asuntos mercantiles y de procedimientos concursales**[m
+[31m-    Subtipos: ConcursoAcreedores, NombramientoAdministradorConcursal, AnuncioConcursal[m
+[31m-[m
+[31m-16. **Comunicados institucionales y actos protocolarios**[m
+[31m-    Subtipos: DeclaracionInstitucional, ProtocoloVisita, NombramientoHonorifico[m
+[31m-[m
+[31m-17. **Publicidad legal y comerciales obligatorias**[m
+[31m-    Subtipos: AvisoLegal, PublicacionConvocatoriaSociedad, LiquidacionSocietaria[m
+[31m-[m
+[31m-18. **Medidas urgentes y de emergencia**[m
+[31m-    Subtipos: EstadoAlarma, EstadoExcepcion, MedidaEmergencia, SuspensionTemporal[m
+[31m-    Ejemplos: decretos emergencia sanitaria, medidas extraordinarias[m
+[31m-[m
+[31m-19. **Otros / Varios**[m
+[31m-    Subtipos: Misc, InformacionSectorial, BoletinInterno[m
+[31m-    Uso: para publicaciones atípicas que no encajen en las anteriores[m
+[31m-[m
+ ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:[m
+ - **95-100**: Reformas constitucionales, presupuestos generales del Estado, leyes orgánicas fundamentales[m
+   Ejemplo: "Ley Orgánica de reforma del Código Penal" → 97[m
+[36m@@ -297,8 +216,6 @@[m [mResponde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):[m
+     {[m
+       "id": "ID_del_documento",[m
+       "tipo": "buff|nerf|actualización",[m
+[31m-      "categoria": "nombre_categoria_principal",[m
+[31m-      "subtipo": "subtipo_especifico",[m
+       "summary": "Resumen conciso del impacto real",[m
+       "relevance": número_entero_específico_1_a_100[m
+     }[m
+[36m@@ -350,11 +267,9 @@[m [mResponde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):[m
+         for (const resultItem of result) {[m
+           const item = reducedBatch.find(b => b.id === resultItem.id);[m
+           if (item) {[m
+[31m-            all.push({[m
+[32m+[m[32m            (results as any).push({[m
+               id: resultItem.id,[m
+               tipo: resultItem.tipo,[m
+[31m-              categoria: resultItem.categoria,[m
+[31m-              subtipo: resultItem.subtipo,[m
+               summary: resultItem.summary,[m
+               relevance: resultItem.relevance[m
+             });[m
+[36m@@ -397,7 +312,7 @@[m [mResponde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):[m
+       // Mostrar progreso[m
+       validResults.forEach((r: ClassificationResult) => {[m
+         const emoji = r.tipo === 'buff' ? '🔼' : r.tipo === 'nerf' ? '🔽' : '⚙️';[m
+[31m-        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100) [${r.categoria}/${r.subtipo}]: ${r.summary.substring(0, 80)}...`);[m
+[32m+[m[32m        console.log(`  ${emoji} ${r.tipo.toUpperCase()} (${r.relevance}/100): ${r.summary.substring(0, 80)}...`);[m
+       });[m
+       [m
+     } catch (e: any) {[m
+[36m@@ -490,8 +405,6 @@[m [mexport async function classifyAndSaveToDatabase(fecha: string): Promise<void> {[m
+           fecha: fecha,[m
+           titulo: originalDoc.TITULO,[m
+           tipo: classification.tipo,[m
+[31m-          categoria: classification.categoria,[m
+[31m-          subtipo: classification.subtipo,[m
+           summary: classification.summary,[m
+           relevance: classification.relevance,[m
+           contenido: originalDoc.CONTENIDO[m
