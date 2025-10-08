@@ -152,7 +152,7 @@ export default function Home() {
             </h2>
             <button
               onClick={volverAHoy}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="btn btn-secondary"
             >
               ← Volver a hoy
             </button>
@@ -173,7 +173,7 @@ export default function Home() {
       ) : (
         <div>
           <h2 className="text-2xl font-bold text-center mb-6">
-            �� Parches de hoy — {fechaHoyFormateada}
+            📊 Parches de hoy — {fechaHoyFormateada}
           </h2>
 
           {patchesHoy.length === 0 ? (
