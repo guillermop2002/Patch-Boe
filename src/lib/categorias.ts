@@ -1,5 +1,6 @@
 // src/lib/categorias.ts
 // Utilidades para manejar categorías del BOE con colores
+import React from 'react';
 
 export interface CategoriaInfo {
   id: string;
