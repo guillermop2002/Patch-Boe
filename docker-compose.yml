@@ -8,8 +8,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=80
+    env_file:
+      - .env.local
     volumes:
       - ./data:/app/data
-      - ./.env.local:/app/.env.local
     restart: unless-stopped
     container_name: patch-legislativo
