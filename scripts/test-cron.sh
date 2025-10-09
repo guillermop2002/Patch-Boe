@@ -43,39 +43,31 @@ cleanup_test_data() {
     local fecha=$1
     
     echo ""
-    echo "🧹 ¿Desea limpiar los datos de prueba para la fecha $fecha?"
+    echo "🧹 Limpiando datos de prueba para la fecha $fecha..."
     echo "   Esto eliminará:"
     echo "   - XMLs en data/xml/$fecha/"
     echo "   - JSONs en data/json/$fecha/"
     echo "   - Registros de BD para fecha $fecha"
     echo ""
-    read -p "¿Continuar? (s/N): " -n 1 -r
-    echo
     
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
-        echo "🧹 Limpiando datos de prueba..."
-        
-        # Eliminar XMLs
-        if [ -d "$PROJECT_DIR/data/xml/$fecha" ]; then
-            rm -rf "$PROJECT_DIR/data/xml/$fecha"
-            echo "✅ XMLs eliminados"
-        fi
-        
-        # Eliminar JSONs
-        if [ -d "$PROJECT_DIR/data/json/$fecha" ]; then
-            rm -rf "$PROJECT_DIR/data/json/$fecha"
-            echo "✅ JSONs eliminados"
-        fi
-        
-        # Eliminar registros de BD
-        sudo docker exec patch-legislativo sqlite3 data/db/patches.db \
-            "DELETE FROM patches WHERE fecha='$fecha';" 2>/dev/null || true
-        echo "✅ Registros de BD eliminados"
-        
-        echo "✅ Limpieza completada"
-    else
-        echo "⏭️  Limpieza cancelada"
+    # Eliminar XMLs
+    if [ -d "$PROJECT_DIR/data/xml/$fecha" ]; then
+        rm -rf "$PROJECT_DIR/data/xml/$fecha"
+        echo "✅ XMLs eliminados"
     fi
+    
+    # Eliminar JSONs
+    if [ -d "$PROJECT_DIR/data/json/$fecha" ]; then
+        rm -rf "$PROJECT_DIR/data/json/$fecha"
+        echo "✅ JSONs eliminados"
+    fi
+    
+    # Eliminar registros de BD
+    sudo docker exec patch-legislativo sqlite3 data/db/patches.db \
+        "DELETE FROM patches WHERE fecha='$fecha';" 2>/dev/null || true
+    echo "✅ Registros de BD eliminados"
+    
+    echo "✅ Limpieza completada"
 }
 
 run_test() {
