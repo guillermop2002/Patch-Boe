@@ -1,20 +1,18 @@
 ﻿'use client'
 
 import React, { useState, useEffect } from 'react'
-import { PatchEntry, getPatchesByFecha, getFechasDisponibles, buscarPatches } from '@/lib/api-client'
+import { PatchEntry, getUltimosPatches, getFechasDisponibles, buscarPatches } from '@/lib/api-client'
 import { getFechaHoy, formatearFecha } from '@/lib/fechas'
 import BuscadorAvanzado, { CriteriosBusqueda } from '@/components/BuscadorAvanzado'
 import { CategoriaBadge } from '@/lib/categorias'
 
 export default function Home() {
-  const [patchesHoy, setPatchesHoy] = useState<PatchEntry[]>([])
+  const [ultimosPatches, setUltimosPatches] = useState<PatchEntry[]>([])
+  const [fechaUltima, setFechaUltima] = useState<string>('')
   const [patchesBusqueda, setPatchesBusqueda] = useState<PatchEntry[]>([])
   const [fechasDisponibles, setFechasDisponibles] = useState<string[]>([])
   const [mostrandoBusqueda, setMostrandoBusqueda] = useState(false)
   const [loading, setLoading] = useState(true)
-
-  const fechaHoy = getFechaHoy()
-  const fechaHoyFormateada = formatearFecha(fechaHoy)
 
   useEffect(() => {
     cargarDatos()
@@ -22,9 +20,10 @@ export default function Home() {
 
   const cargarDatos = async () => {
     try {
-      // Cargar patches de hoy
-      const { patches: patchesDeHoy } = await getPatchesByFecha(fechaHoy)
-      setPatchesHoy(patchesDeHoy)
+      // Cargar últimos patches (más recientes y relevantes)
+      const { patches, fecha, stats } = await getUltimosPatches()
+      setUltimosPatches(patches)
+      setFechaUltima(fecha)
 
       // Cargar fechas disponibles
       const fechas = await getFechasDisponibles()
@@ -173,15 +172,15 @@ export default function Home() {
       ) : (
         <div>
           <h2 className="text-2xl font-bold text-center mb-6">
-            📊 Parches de hoy — {fechaHoyFormateada}
+            📊 Últimos parches — {fechaUltima ? formatearFecha(fechaUltima) : 'Cargando...'}
           </h2>
 
-          {patchesHoy.length === 0 ? (
+          {ultimosPatches.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📭</div>
-              <p className="empty-title">No hay parches para hoy</p>
+              <p className="empty-title">No hay parches disponibles</p>
               <p className="empty-subtitle">
-                Utiliza el buscador para explorar fechas anteriores
+                Los crons procesan automáticamente los datos del BOE. Utiliza el buscador para explorar fechas específicas.
               </p>
             </div>
           ) : (
@@ -190,17 +189,17 @@ export default function Home() {
               <div className="text-center mb-6">
                 <div className="inline-flex gap-4 bg-gray-100 rounded-lg px-4 py-2">
                   <span className="text-green-600 font-semibold">
-                    🔼 {patchesHoy.filter(p => p.tipo === 'buff').length} BUFFS
+                    🔼 {ultimosPatches.filter(p => p.tipo === 'buff').length} BUFFS
                   </span>
                   <span className="text-red-600 font-semibold">
-                    🔽 {patchesHoy.filter(p => p.tipo === 'nerf').length} NERFS
+                    🔽 {ultimosPatches.filter(p => p.tipo === 'nerf').length} NERFS
                   </span>
-                  <span className="text-gray-600">📊 {patchesHoy.length} total</span>
+                  <span className="text-gray-600">📊 {ultimosPatches.length} más relevantes</span>
                 </div>
               </div>
 
               <div className="patches-list">
-                {patchesHoy.map(renderPatch)}
+                {ultimosPatches.map(renderPatch)}
               </div>
             </div>
           )}

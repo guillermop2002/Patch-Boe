@@ -246,6 +246,13 @@ class PatchDatabase {
     stmt.run(fecha);
   }
 
+  // Obtener la fecha más reciente
+  getLatestDate(): string | null {
+    const stmt = this.db.prepare(`SELECT fecha FROM patches ORDER BY fecha DESC LIMIT 1`);
+    const result = stmt.get() as { fecha: string } | undefined;
+    return result?.fecha || null;
+  }
+
   // Cerrar conexión
   close(): void {
     this.db.close();

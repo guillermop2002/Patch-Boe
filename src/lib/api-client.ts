@@ -47,6 +47,15 @@ export async function getFechasDisponibles(): Promise<string[]> {
   return data.fechas
 }
 
+// Obtener últimos patches (más recientes y relevantes)
+export async function getUltimosPatches(): Promise<{ patches: PatchEntry[], fecha: string, stats: PatchStats }> {
+  const response = await fetch('/api/patches?action=ultimos')
+  if (!response.ok) {
+    throw new Error('Error obteniendo últimos patches')
+  }
+  return response.json()
+}
+
 // Búsqueda avanzada
 export async function buscarPatches(criterios: CriteriosBusqueda): Promise<PatchEntry[]> {
   const params = new URLSearchParams()

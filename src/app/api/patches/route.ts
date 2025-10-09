@@ -21,6 +21,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ fechas })
     }
 
+    // Obtener últimos patches (más recientes y relevantes)
+    if (action === 'ultimos') {
+      const ultimaFecha = db.getLatestDate()
+      if (!ultimaFecha) {
+        return NextResponse.json({ patches: [], fecha: null, stats: { buffs: 0, nerfs: 0, total: 0 } })
+      }
+      
+      const patches = db.getPatchesByDate(ultimaFecha)
+      const stats = db.getStatsByDate(ultimaFecha)
+      
+      // Ordenar por relevancia descendente y tomar los 10 más relevantes
+      const patchesOrdenados = patches
+        .sort((a, b) => b.relevance - a.relevance)
+        .slice(0, 10)
+      
+      return NextResponse.json({ 
+        patches: patchesOrdenados, 
+        fecha: ultimaFecha, 
+        stats 
+      })
+    }
+
     // Búsqueda avanzada
     if (action === 'buscar') {
       const limite = searchParams.get('limite')
