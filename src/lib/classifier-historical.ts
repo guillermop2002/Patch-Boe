@@ -188,54 +188,54 @@ ESCALA DE RELEVANCIA (1-100) - EQUILIBRADA:
 
 - **70-84**: Cambios significativos en sectores importantes (sanidad, educación, empleo a nivel nacional)
   Ejemplo: "Real Decreto de nuevas prestaciones por desempleo" → 76
-  ⚠️ ~3% de documentos deberían estar aquí
+  ⚠️ ~2% de documentos deberían estar aquí
 
 - **55-69**: Regulaciones sectoriales moderadas, afectan a sectores específicos pero amplios
   Ejemplo: "Orden de nuevas ayudas para autónomos" → 62
-  ⚠️ ~5% de documentos deberían estar aquí
+  ⚠️ ~3% de documentos deberían estar aquí
 
 - **40-54**: Cambios administrativos con impacto limitado, regulaciones de nicho
   Ejemplo: "Resolución de bases reguladoras de subvenciones para cooperativas agrarias" → 48
-  ⚠️ ~8% de documentos deberían estar aquí
+  ⚠️ ~5% de documentos deberían estar aquí
 
 - **25-39**: Convocatorias de empleo público, nombramientos importantes, correcciones menores
   Ejemplo: "Convocatoria de 50 plazas de funcionarios del Ministerio X" → 32
-  ⚠️ ~12% de documentos pueden estar aquí
+  ⚠️ ~8% de documentos pueden estar aquí
 
 - **10-24**: Nombramientos individuales, correcciones de erratas, anuncios administrativos
   Ejemplo: "Nombramiento de Director General de la Agencia X" → 18
-  ⚠️ ~20% de documentos pueden estar aquí
+  ⚠️ ~15% de documentos pueden estar aquí
 
 - **1-9**: Cambios puramente técnicos, correcciones tipográficas, anuncios sin impacto
   Ejemplo: "Corrección de errores en la Orden de 15 de marzo" → 5
-  ⚠️ ~50% de documentos deberían estar aquí
+  ⚠️ ~65% de documentos deberían estar aquí
   ⚠️ ~15% de documentos pueden estar aquí
 
 EJEMPLOS CONCRETOS DE CLASIFICACIÓN EQUILIBRADA:
 
 1. "Convocatoria de 200 plazas de Policía Nacional"
-   → BUFF, ConvocatoriasEmpleoPublico, relevancia: 32 (afecta a aspirantes y mejora seguridad)
+   → BUFF, ConvocatoriasEmpleoPublico, relevancia: 28 (afecta a aspirantes y mejora seguridad)
 
 2. "Modificación del convenio ICO para facilidades de financiación empresarial"
-   → BUFF, SubvencionesAyudas, relevancia: 45 (ayuda a empresas, sectorial importante)
+   → BUFF, SubvencionesAyudas, relevancia: 42 (ayuda a empresas, sectorial importante)
 
 3. "Admisión a trámite de recurso de inconstitucionalidad contra ley autonómica"
-   → ACTUALIZACIÓN, Jurisprudencia, relevancia: 15 (es un trámite procesal)
+   → ACTUALIZACIÓN, Jurisprudencia, relevancia: 12 (es un trámite procesal)
 
 4. "Nombramiento de Secretario General Técnico del Ministerio de Cultura"
-   → ACTUALIZACIÓN, ActosIndividuales, relevancia: 8 (nombramiento individual)
+   → ACTUALIZACIÓN, ActosIndividuales, relevancia: 6 (nombramiento individual)
 
 5. "Real Decreto de aumento de pensiones mínimas en 50€/mes"
-   → BUFF, NormasYDisposiciones, relevancia: 78 (afecta a millones de pensionistas - IMPACTO NACIONAL)
+   → BUFF, NormasYDisposiciones, relevancia: 82 (afecta a millones de pensionistas - IMPACTO NACIONAL)
 
 6. "Orden de exclusión de 3 deportistas de ayudas por dopaje"
-   → ACTUALIZACIÓN, SubvencionesAyudas, relevancia: 3 (afecta solo a 3 personas específicas)
+   → ACTUALIZACIÓN, SubvencionesAyudas, relevancia: 2 (afecta solo a 3 personas específicas)
 
 7. "Real Decreto de nuevas medidas de apoyo a la industria automotriz"
-   → BUFF, SectorialesTecnicos, relevancia: 52 (sectorial importante)
+   → BUFF, SectorialesTecnicos, relevancia: 48 (sectorial importante)
 
 8. "Convocatoria de ayudas para jóvenes agricultores"
-   → BUFF, SubvencionesAyudas, relevancia: 35 (sectorial moderado)
+   → BUFF, SubvencionesAyudas, relevancia: 31 (sectorial moderado)
 
 DOCUMENTOS A ANALIZAR:
 ${batchPrompts}
@@ -249,7 +249,7 @@ INSTRUCCIONES EQUILIBRADAS:
 6. Nombramientos individuales, correcciones menores → ACTUALIZACIÓN
 7. Convocatorias sectoriales, ayudas específicas → BUFF/NERF según impacto
 8. Si dudas entre buff/nerf y actualización → evalúa el impacto sectorial
-9. DISTRIBUYE las puntuaciones: 50% en 1-9, 20% en 10-24, 12% en 25-39, etc.
+9. DISTRIBUYE las puntuaciones: 65% en 1-9, 15% en 10-24, 8% en 25-39, 5% en 40-54, 3% en 55-69, 2% en 70-84, 1% en 85-94, 0.5% en 95-100
 10. IMPORTANTE: Si un documento tiene algún impacto sectorial o afecta a grupos específicos, clasifícalo como BUFF/NERF, no como ACTUALIZACIÓN
 
 Responde ÚNICAMENTE con JSON válido (sin markdown, sin explicaciones):
