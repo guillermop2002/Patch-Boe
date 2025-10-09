@@ -133,7 +133,7 @@ async function fetchBOE(fecha) {
   console.log('\n🤖 Iniciando clasificación automática...')
   try {
     // Importar dinámicamente el módulo de clasificación
-    const { classifyAndSaveToDatabase } = await import('../src/lib/classifier.js')
+    const { classifyAndSaveToDatabase } = await import('../dist/classifier.js')
     await classifyAndSaveToDatabase(fecha)
   } catch (error) {
     console.error('❌ Error en clasificación automática:', error.message)

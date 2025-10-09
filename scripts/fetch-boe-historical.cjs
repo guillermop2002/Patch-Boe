@@ -134,7 +134,7 @@ async function fetchBOEHistorical(fecha) {
   console.log('\n🤖 [HISTÓRICO] Iniciando clasificación automática...')
   try {
     // Importar dinámicamente el módulo de clasificación histórica
-    const { classifyAndSaveToDatabaseHistorical } = await import('../src/lib/classifier-historical.js')
+    const { classifyAndSaveToDatabaseHistorical } = await import('../dist/classifier-historical.js')
     await classifyAndSaveToDatabaseHistorical(fecha)
   } catch (error) {
     console.error('❌ [HISTÓRICO] Error en clasificación automática:', error.message)
